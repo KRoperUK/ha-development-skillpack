@@ -39,17 +39,17 @@ As my desire for HA functionality far outstripped my own ability to code (or eve
 
 ## How I Use This Skill
 
-I use this Skill in two separate prompt sessions — sometimes with two different AI models.
 
-First, I ask the AI to write the automation, script, sensor, etc. using these rules.
+I use this Skill across three prompt sessions — sometimes with different AI models.
 
-Second, I ask it to act as a grumpy senior architect/reviewer — focused on correctness, restart behavior, edge cases, and strict adherence to the Skill.
+First, I ask the AI to act as architect: discuss the design in plain English, present options with tradeoffs, identify potential flaws and shortcomings, pressure-test the approach before any code is written, and document testing/acceptance criteria. The goal is to surface and resolve design problems early — not after they're baked into YAML.
 
-The first session gets it working.  
-The second session tries to break it.  
-(Repeat as necessary to get to the final code.)
+Second, I ask it to 1) review the design and resolve questions or push back on implicit assumptions, and 2) implement the agreed design using these rules.
 
-Both are part of the process.
+Third, I ask it to act as a grumpy senior reviewer — focused on yaml/jinja correctness, fit to design, restart behavior, unaddressed edge cases, and strict adherence to the Skill. This session tries to break the code.
+
+
+Each step feeds back into the previous as needed — design is pressure-tested before coding begins, and code is pressure-tested before it ships.
 
 ---
 
