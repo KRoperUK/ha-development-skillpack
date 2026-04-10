@@ -4,7 +4,7 @@ Use this as your entry point. The skill is a reasoning framework for producing r
 
 ## Layout & Naming (kept here exclusively)
 - `guides/` — review how‑to & principles
-- `patterns/` — behavioral design patterns (restart resilience, idempotency, chatter control, lighting paths, execution gating)
+- `patterns/` — behavioral design patterns (restart resilience, datetime deadlines, idempotency, chatter control, lighting paths, execution gating)
 - `cookbooks/` — DTT techniques & debugging (incl. traces)
 - `snippets/` — isolated Jinja fragments and do/don't examples; not standalone deployable code
 - `templates/` — automation/script/template_sensor scaffolds + option matrix

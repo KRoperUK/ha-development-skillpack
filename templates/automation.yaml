@@ -9,7 +9,7 @@ description: >
 
   **CHANGELOG:**
 
-  - 2026-01-02: Canonicalized.
+  - 20260102-1200: Canonicalized.
 
 mode: single
 max_exceeded: silent
@@ -22,7 +22,7 @@ triggers:
     from: active
     to: idle
     for:
-      seconds: "{{ range(45, 75) | random }}"
+      seconds: "{{ range(45, 76) | random }}"
 
   - alias: Source sensor changed
     id: source_changed

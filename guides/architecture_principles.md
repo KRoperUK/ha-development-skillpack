@@ -31,7 +31,8 @@ See: `/guides/system_impact_class.md`
 - Gate on `timer.ha_startup_delay → idle`. Use trigger‑level `for:`:
   - Critical: **<10s fixed**
   - Non‑critical: **45–75s randomized**
-- Prefer timers over long `for:` to persist across reboots.
+- Prefer persisted deferred-intent deadlines using `input_datetime` over long `for:` for restart-safe behavior (see: `/patterns/datetime_deadline.md`).
+- Use `timer` only when modeling countdown semantics (UX, cancelable grace windows, protective cooldowns).
 
 ## 5) Determinism & Cost
 - Cheap checks first; heavy Jinja last; precompute commonly used values.

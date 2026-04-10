@@ -1,42 +1,52 @@
 # Once-Per-Day Alert Gating Pattern
 
+## TL;DR
+
+- Use `input_datetime` with full date+time to store the last alert timestamp
+- Use sentinel `2999-01-01 00:00:00` to represent “no alert sent yet”
+- Send the alert when the violation is active and either:
+  - no alert has been sent yet, or
+  - the last alert was sent on a prior calendar day
+- Clear back to the sentinel when the violation resolves to allow same-day re-alert on recurrence
+- This is a specialized cadence pattern built on the datetime-first doctrine
+
+---
+
 ## Purpose
 
 When monitoring systems that may have persistent or recurring violations (temperature alerts, battery warnings, maintenance reminders), you often want:
-- Alert sent once per calendar day, even if violation persists
-- Automatic re-alert if violation resolves and recurs same day
-- Clean re-alert on next calendar day if violation is still active
 
-This pattern uses `input_datetime` helpers to gate alert dispatch, enabling fine-grained control over notification cadence without complex timers or state machines.
+- alert sent once per calendar day, even if the violation persists
+- automatic re-alert if the violation resolves and recurs the same day
+- clean re-alert on the next calendar day if the violation is still active
+
+This pattern uses `input_datetime` helpers with the canonical datetime model to gate alert dispatch without complex timers or state machines.
 
 ---
 
 ## Architecture
 
 **Components:**
-- `input_datetime.violation_alert_last_sent` — stores the datetime when alert was last sent
-- **Template sensor** — detects violation state (brains)
-- **Automation** — gates alert dispatch by comparing last-sent date against today (muscles)
+- `input_datetime.violation_alert_last_sent` — stores the last alert timestamp
+- template sensor — detects violation state (brains)
+- automation — gates alert dispatch by comparing the last-sent day against today (muscles)
 
 **Logic flow:**
-```
+```text
 Violation occurs?
-  ├─ Yes: Check if datetime is null OR older than today
+  ├─ Yes: Check if last_sent is sentinel OR older than today
   │   ├─ Yes: Send alert + set datetime to now()
   │   └─ No: Skip (already alerted today)
-  └─ No: Clear datetime to null (enables same-day re-alert if violation recurs)
+  └─ No: Clear datetime to sentinel (enables same-day re-alert)
 ```
 
 ---
 
-## Implementation Details
-
-### 1. Helper Setup
+## Helper Setup
 
 Create one `input_datetime` per violation type:
 
 ```yaml
-# input_datetime.yaml
 violation_alert_last_sent:
   name: "Violation Alert Last Sent"
   has_date: true
@@ -45,87 +55,105 @@ violation_alert_last_sent:
 ```
 
 **Key points:**
-- `has_date: true` — stores full date for calendar-day comparison
-- `has_time: true` — records exact send time for debugging/audit
-- No `editable: false` — owner may manually reset if needed (defensive)
+- `has_date: true` stores the calendar day for daily gating
+- `has_time: true` records the exact send time for debugging and audit
+- no null/blank clearing is used
 
 ---
 
-### 2. Safe Datetime Comparison
+## Sentinel
 
-**Pattern: Null-safe date comparison**
-
-```jinja2
-{% set last_sent = states('input_datetime.violation_alert_last_sent') %}
-{% set last_sent_dt = as_datetime(last_sent, none) %}
-{% set is_null_or_old = last_sent in ['unavailable', 'unknown', ''] or (last_sent_dt is not none and last_sent_dt.date() < now().date()) %}
-{{ is_null_or_old }}
+```text
+2999-01-01 00:00:00
 ```
 
-**Why this pattern:**
-- `last_sent in ['unavailable', 'unknown', '']` catches null states without calling `as_datetime()` on them
-- `as_datetime(last_sent, none)` returns `none` if parsing fails (safe fallback)
-- `last_sent_dt is not none` guards against calling `.date()` on `none` (prevents errors)
-- Only calls `.date()` if we have a valid datetime object
-- Correctly handles first-ever alert (null → alerts immediately) and next-calendar-day persistence (old date → alerts again)
+In this pattern, the sentinel means **“no alert sent yet”**, not “disabled.”
 
-**Do NOT use:**
-```jinja2
-# ❌ WRONG: as_datetime(none, none).date() crashes
-{{ as_datetime(last_sent, none).date() < now().date() }}
+That makes the sentinel state immediately eligible to alert when the violation is active.
 
-# ❌ WRONG: Assumes strftime always works
-{{ last_sent | as_datetime | strftime('%Y-%m-%d') < now().strftime('%Y-%m-%d') }}
+Rules:
+- represents unsent / reset state
+- replaces all null / blank usage
+- must not be used for real scheduling
+
+---
+
+## Canonical Semantics
+
+Use repeated literal sentinel parsing in comparisons and fallback defaults. Do not depend on cross-variable datetime serialization.
+
+```jinja
+{% set last_sent = as_datetime(
+  states('input_datetime.violation_alert_last_sent'),
+  as_datetime('2999-01-01 00:00:00')
+) %}
+{% set active = last_sent != as_datetime('2999-01-01 00:00:00') %}
+{% set last_sent_day = as_timestamp(last_sent) | timestamp_custom('%Y-%m-%d', true) %}
+{% set today_day = as_timestamp(now()) | timestamp_custom('%Y-%m-%d', true) %}
+{% set is_new_day = active and last_sent_day < today_day %}
+```
+
+Interpretation:
+- unsent = sentinel
+- active = not sentinel
+- eligible = (not active) OR new calendar day
+
+---
+
+## Core Gating Logic
+
+```jinja
+{% set last_sent = as_datetime(
+  states('input_datetime.violation_alert_last_sent'),
+  as_datetime('2999-01-01 00:00:00')
+) %}
+
+{% set active = last_sent != as_datetime('2999-01-01 00:00:00') %}
+{% set last_sent_day = as_timestamp(last_sent) | timestamp_custom('%Y-%m-%d', true) %}
+{% set today_day = as_timestamp(now()) | timestamp_custom('%Y-%m-%d', true) %}
+{% set should_alert = (not active) or (last_sent_day < today_day) %}
+
+{{ violation_state == 'active' and should_alert }}
 ```
 
 ---
 
-### 3. Timestamp Format Consistency
+## Consume Behavior
 
-**When setting datetime, use `strftime`:**
+### Set when alert is sent
 
 ```yaml
-action: input_datetime.set_datetime
-target:
-  entity_id: input_datetime.violation_alert_last_sent
-data:
-  datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+- action: input_datetime.set_datetime
+  target:
+    entity_id: input_datetime.violation_alert_last_sent
+  data:
+    datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
 ```
 
-**Why `strftime` over `isoformat()`:**
-- HA's native `input_datetime` renders as `YYYY-MM-DD HH:MM:SS` (no T, no timezone)
-- `isoformat()` produces `YYYY-MM-DDTHH:MM:SS.micro+TZ` (inconsistent, verbose)
-- `strftime` matches the native format for consistency in UI and parsing
-- Easier to read in Developer Tools and logs
+### Clear when violation resolves
+
+```yaml
+- action: input_datetime.set_datetime
+  target:
+    entity_id: input_datetime.violation_alert_last_sent
+  data:
+    datetime: "2999-01-01 00:00:00"
+```
+
+This symmetry enables:
+- alert sent this morning
+- violation resolves this afternoon
+- violation recurs this evening
+- alert is allowed again immediately
 
 ---
 
-### 4. Resolve/Re-Alert Symmetry
+## Overdue Policy
 
-**When violation clears, set datetime to null:**
+**Overdue Policy:** execute immediately if overdue (daily gate ensures evaluation)
 
-```yaml
-- alias: Clear alert timestamp if violation resolved
-  if:
-    - condition: template
-      value_template: >
-        {{ violation_state != 'active' and last_sent not in ['unavailable', 'unknown', ''] }}
-  then:
-    - action: input_datetime.set_datetime
-      target:
-        entity_id: input_datetime.violation_alert_last_sent
-      data:
-        datetime: null
-```
-
-**This enables:**
-- Violation clears at 2:00 PM → datetime set to null
-- Violation recurs at 4:00 PM (same day) → null datetime → alert sent again + datetime set to now
-- Tomorrow morning, violation still active → datetime is yesterday → alert sent again + datetime updated to today
-
-**Without this clear logic:**
-- Once you've alerted today, you won't re-alert same day even if violation recurs
-- Breaks the "re-alert on recurrence" requirement
+Reason:
+- the daily check must send the alert if a prior eligible day was missed
 
 ---
 
@@ -135,12 +163,10 @@ data:
 alias: Violation Monitoring – Alert Once Per Day
 description: >
   Monitors violation state. Sends alert at most once per calendar day, with
-  automatic re-alert if violation resolves and recurs same day.
-  
-  **CHANGELOG:**
-  
-  - 20260127-0600: Updated with CHANGELOG
-  - 20260126-1430: Updated with YAML standards current as of version 2026.1.x
+  automatic re-alert if the violation resolves and recurs the same day.
+
+  Owner: automation.violation_alert_monitor
+  Overdue Policy: execute immediately if overdue
 
 triggers:
   - id: violation_changed
@@ -156,26 +182,39 @@ triggers:
 conditions: []
 
 actions:
-  - alias: Capture violation state and last-sent timestamp
+  - alias: Capture violation state and last-sent values
     variables:
       violation_state: >
-        {{ state_attr('sensor.violation_status', 'violation_flag') | default(none) }}
-      last_sent: >
-        {{ states('input_datetime.violation_alert_last_sent') }}
-      now_date: >
-        {{ now().date() }}
+        {{ state_attr('sensor.violation_status', 'violation_flag') }}
 
-  - alias: Send alert if violation active and gated
+      last_sent: >
+        {{ as_datetime(
+          states('input_datetime.violation_alert_last_sent'),
+          as_datetime('2999-01-01 00:00:00')
+        ) }}
+
+      active: >
+        {{ last_sent != as_datetime('2999-01-01 00:00:00') }}
+
+      last_sent_day: >
+        {{ as_timestamp(last_sent) | timestamp_custom('%Y-%m-%d', true) }}
+
+      today_day: >
+        {{ as_timestamp(now()) | timestamp_custom('%Y-%m-%d', true) }}
+
+      should_alert: >
+        {{ (not active) or (last_sent_day < today_day) }}
+
+  - alias: Send alert if violation active and eligible
     if:
       - condition: template
         value_template: >
-          {% set last_dt = as_datetime(last_sent, none) %}
-          {% set should_alert = last_sent in ['unavailable', 'unknown', ''] or (last_dt is not none and last_dt.date() < now_date) %}
           {{ violation_state == 'active' and should_alert }}
     then:
       - action: telegram_bot.send_message
         data:
           message: "⚠️ Violation Alert"
+
       - action: input_datetime.set_datetime
         target:
           entity_id: input_datetime.violation_alert_last_sent
@@ -186,128 +225,47 @@ actions:
     if:
       - condition: template
         value_template: >
-          {{ violation_state != 'active' and last_sent not in ['unavailable', 'unknown', ''] }}
+          {{ violation_state != 'active' }}
     then:
       - action: input_datetime.set_datetime
         target:
           entity_id: input_datetime.violation_alert_last_sent
         data:
-          datetime: null
+          datetime: "2999-01-01 00:00:00"
 
 mode: single
 ```
 
 ---
 
-## Common Variations
+## Optional Grace Window
 
-### Multiple violations with different cadences
+If needed, use a `timer` to delay alerting briefly and cancel if the violation clears before the grace window ends.
 
-Create separate `input_datetime` helpers per violation (e.g., `temp_high_alert_last_sent`, `temp_low_alert_last_sent`). Use the same gating logic independently for each.
-
-**Benefit:** Temp-high violation can alert while temp-low is suppressed (if both exist), and each resets independently.
-
-### Alert every N days instead of once per day
-
-Change the date comparison:
-
-```jinja2
-{% set days_since_alert = (now().date() - last_sent_dt.date()).days %}
-{{ days_since_alert >= 3 }}  # Alert every 3 days
-```
-
-### Alert with grace window before sending
-
-Use a timer (separate from datetime gating) to delay alert for N minutes, allowing brief violations to self-resolve:
-
-```yaml
-- alias: Start grace window when violation detected
-  if:
-    - condition: template
-      value_template: "{{ violation_state == 'active' }}"
-  then:
-    - action: timer.start
-      target:
-        entity_id: timer.violation_grace_window
-      data:
-        duration: "00:05:00"
-
-- alias: Send alert if grace window expired and still violated
-  if:
-    - condition: trigger
-      id: timer_expired
-    - condition: template
-      value_template: "{{ violation_state == 'active' }}"
-  then:
-    # ... gating logic + send alert ...
-```
-
----
-
-## Real-World Examples
-
-- **Wine Fridge Monitoring** — Temperature/humidity/offline alerts, once per day per violation type, resolve/re-alert same day
-- **Battery Alerts** — Low battery warnings, once per day, clear when battery recovers
-- **Maintenance Reminders** — Filter replacement due dates, once per day until action taken
-- **Oven Alerts** — Running too long warnings, once per N hours (variation on pattern)
+That is a valid timer use case because it is a **cancelable grace window**, not durable deferred intent.
 
 ---
 
 ## Testing & Validation
 
-**In Developer Tools → Templates:**
+Validated in Developer Tools → Templates for:
 
-```jinja2
-# Test null case (first alert)
-{% set last_sent = '' %}
-{% set last_sent_dt = as_datetime(last_sent, none) %}
-{% set is_null_or_old = last_sent in ['unavailable', 'unknown', ''] or (last_sent_dt is not none and last_sent_dt.date() < now().date()) %}
-{{ is_null_or_old }}
-# Expected: True (should alert)
+- fallback from `unknown` to sentinel
+- stable equality between repeated `as_datetime('2999-01-01 00:00:00')` calls
+- sentinel detection via object comparison
+- same-day suppression
+- next-day re-alert eligibility
 
-# Test today's date (already alerted)
-{% set last_sent = '2025-12-10 10:00:00' %}
-{% set last_sent_dt = as_datetime(last_sent, none) %}
-{% set is_null_or_old = last_sent in ['unavailable', 'unknown', ''] or (last_sent_dt is not none and last_sent_dt.date() < now().date()) %}
-{{ is_null_or_old }}
-# Expected: False (should NOT alert)
-
-# Test yesterday's date (next calendar day)
-{% set last_sent = '2025-12-09 10:00:00' %}
-{% set last_sent_dt = as_datetime(last_sent, none) %}
-{% set is_null_or_old = last_sent in ['unavailable', 'unknown', ''] or (last_sent_dt is not none and last_sent_dt.date() < now().date()) %}
-{{ is_null_or_old }}
-# Expected: True (should alert again)
-```
-
----
-
-## Gotchas & Troubleshooting
-
-**Gotcha 1:** Automation doesn't re-alert after violation clears and recurs
-- **Cause:** Missing "clear timestamp on resolve" logic
-- **Fix:** Add the else branch that sets datetime to null
-
-**Gotcha 2:** `as_datetime(null, none)` crashes automation
-- **Cause:** Not guarding with `is not none` before calling `.date()`
-- **Fix:** Use the pattern from section 2 above
-
-**Gotcha 3:** Timestamp format mismatch when parsing
-- **Cause:** Using `isoformat()` which includes timezone/microseconds
-- **Fix:** Use `strftime('%Y-%m-%d %H:%M:%S')`
-
-**Gotcha 4:** Alert fires multiple times on same day
-- **Cause:** Trigger fires multiple times but datetime check doesn't gate properly
-- **Fix:** Ensure `last_sent in ['unavailable', 'unknown', '']` is first condition (fast-fail)
+Representative outcomes:
+- `helper_raw = 'unknown'` → active `False`, should_alert `True`
+- `helper_raw = '2999-01-01 00:00:00'` → active `False`, should_alert `True`
+- `helper_raw = '2026-04-10 09:00:00'` on the same day → active `True`, should_alert `False`
+- `helper_raw = '2026-04-09 09:00:00'` on the next day → active `True`, should_alert `True`
 
 ---
 
 ## Related Patterns
 
-- **Restart Resilience** — Ensures datetime helpers survive HA restart
-- **Safe Jinja** — Proper filtering and error handling for `as_datetime()` calls
-- **Idempotent Actions** — Setting datetime multiple times is safe (write-only)
-
----
-
-_Last updated: 2026-01-27
+- `/patterns/datetime_deadline.md`
+- `/patterns/restart_resilience.md`
+- `/snippets/jinja_patterns.md`

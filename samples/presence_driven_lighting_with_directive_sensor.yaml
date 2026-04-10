@@ -172,7 +172,7 @@ template:
           has_targets: "{{ has_targets }}"
 
           items_json: >
-            {{ targets_list | to_json }}
+            {{ targets_list | tojson }}
 
           unavailable_entities: >
             {% set ns = namespace(u=[]) %}
@@ -201,6 +201,8 @@ description: >
   Presence-driven area lighting using a centralized targets sensor and apply scripts.
   Trigger-level `for:` provides OFF stickiness; manual override wins.
   Manual override detection watches main light only; accent adjustments are not tracked.
+  Note: input_datetime.example_area_last_auto_apply is a chatter-control timestamp (not a deferred-intent deadline).
+
 
   **CHANGELOG:**
 
@@ -289,7 +291,7 @@ actions:
       brightness_mismatch: "{{ actual_main_state == 'on' and ((actual_main_bri - desired_main_bri) | abs > bri_tol) }}"
 
       last_apply_iso: "{{ states('input_datetime.example_area_last_auto_apply') }}"
-      last_apply_dt: "{{ last_apply_iso | as_datetime | default(none) }}"
+      last_apply_dt: "{{ as_datetime(last_apply_iso, none) }}"
       last_apply_age_s: >-
         {% if last_apply_dt %}
           {{ (as_timestamp(now()) - as_timestamp(last_apply_dt)) | int(999999) }}
@@ -352,7 +354,7 @@ actions:
         target:
           entity_id: input_datetime.example_area_last_auto_apply
         data:
-          datetime: "{{ now().isoformat() }}"
+          datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
 
       - alias: Apply lighting via centralized script
         action: script.turn_on

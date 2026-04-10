@@ -5,10 +5,17 @@ description: >
 ---
 # SKILL.md
 
-**Version:** 0.5.5
+**Version:** 0.6.0
 **Maintainers:** Rob
 
 ## Changelog
+## 0.6.0
+- Added `patterns/datetime_deadline.md`: canonical datetime-based deferred intent pattern
+- Updated doctrine: `input_datetime` is now the default for deferred one-shot intent; `timer` limited to countdown use cases
+- Introduced required overdue policy and explicit helper ownership (named owner)
+- Canonicalized datetime parsing and range semantics (`as_datetime(value, default)`, `range(45, 76)` for "45–75")
+- Clarified `max_exceeded: silent` as context-dependent (not universally required)
+- Added scoped exception for guarded `.last_updated` / `.last_changed` access for staleness calculations
 ## 0.5.5
 - Added prohibition for comments inside of jinja literals
 - Added \patterns/execution_gating.md`: positive-path framing pattern for automation action gating, including compound boolean gates, multi-path scaling, and when to invert to deny-by-default (Class A–B automations).`
@@ -74,6 +81,8 @@ A reusable instruction pack that standardizes how we co-create Home Assistant co
 - **Startup & Recovery**: use a startup delay gate (e.g., `timer.ha_startup_delay → idle`). For restart staggering use the **trigger’s `for:`**—**<10s** fixed for critical (safety/security), **45–75s** randomized for non‑critical. No action-level delays.
 - **Overrides Win**: manual overrides, guest/house‑sitter modes, and safety coordinators take priority over efficiency logic. **Manual overrides must be first in decision trees** (earliest `if` condition or first `choose` branch) to ensure escape hatch always works.
 - **Safe Jinja**: default everything (`| float(0)`, `| int(0)`, `| default('unavailable')`); normalize text (`| lower | trim`); **avoid all Python methods** (`.get()`, `.items()`, `.append()`, `.split()`, `.replace()`, `.format()`, `.total_seconds()`, `.strip()`, etc.—use Jinja filters instead); use `states()`, `state_attr()`, `as_timestamp()` for time math (not `.total_seconds()`).
+- **Direct state-object access** is prohibited, except `.last_updated` / `.last_changed` for staleness/age calculations; must be guarded (entity exists) and used only for time semantics.
+- **Datetime parsing** must use safe fallback form: `as_datetime(value, default)` (no pipe-chained `| as_datetime | default()`).
 - **Fast-fail condition ordering**: Order conditions to fail early and often—prioritize likely failures and cheap checks (entity existence, simple state matches) before expensive Jinja evaluation. Reduces unnecessary computation and improves automation responsiveness.
 - **Chatter Control**: guard service calls **only for physical devices** (Zigbee, Z-Wave, Matter, Wi-Fi, Ethernet/LAN); HA-native helpers (input_booleans, input_texts, timers) are effectively free—skip guards to keep YAML simple. Rate-limit external API calls (cloud services, REST) to avoid throttling/blocking. Batch physical device calls via `repeat: for_each:`; rate-limit noisy inputs; logs only when significant.
 - **Graceful Integration Degradation**: Sensors depending on external APIs or unreliable integrations must degrade gracefully. Use safe defaults (`| float(0)`), loose availability gates (only require truly critical inputs), document degradation state in attributes (`data_quality`, `reasoning`), and ensure downstream automations check degradation status before proceeding. See `/patterns/integration_degradation.md`.

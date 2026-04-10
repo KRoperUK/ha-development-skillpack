@@ -79,6 +79,7 @@ If detected:
 ### Master
 - [ ] KISS & scope clear; simpler alternative considered/ruled out
 - [ ] GUI‑friendly automation/script YAML; `alias:` mandatory at all levels; `description:` at automation/script/sensor level; `id:` per trigger
+- [ ] `max_exceeded: silent` considered for automations that fire frequently or have significant risk of exceeding `max`
 - [ ] **Comments policy**: Automations/scripts are **comment-free YAML**; intent lives only in `alias:` and `description:`. Template sensors **must** include inline comments and commented `#debug_*` attributes. AppDaemon comments for complex logic only
 - [ ] **Startup triggers** only when post-restart actions needed (state recovery, initialization); avoid for passive automations
 - [ ] Brains vs muscles respected; scripts for fan‑outs; concurrency sane
@@ -87,8 +88,11 @@ If detected:
 - [ ] State trigger `to:`/`from:` and event trigger `event_type:` are **literal string matches only** — never Jinja; `for:` does accept Jinja; use `platform: template` + `value_template:` for evaluated expressions
 - [ ] Jinja safety: safe defaults (`| float(0)`, `| int(0)`)
 - [ ] No Python methods (`.get()`, `.items()`, `.total_seconds()`, etc.)
+- [ ] No direct state-object access (e.g., `states.sensor.x.last_changed`) except `.last_updated` / `.last_changed` for staleness or age calculations; must be guarded and used only for time semantics
 - [ ] String normalization: `| lower | trim`
 - [ ] Time math: `as_timestamp()` not `.total_seconds()`
+- [ ] Deferred-intent datetime helpers follow canonical pattern (full datetime, sentinel `2999-01-01 00:00:00`, no null/blank, literal sentinel comparison)
+  - Does NOT apply to non-deferred timestamps (e.g., chatter-control like "last applied", "last run")
 - [ ] Type safety: raw/typed variables separated; comparisons use typed with tolerance
 - [ ] Availability: `has_value()` for entity checks (1)
 - [ ] Event-driven preferred; if polling, ≥60s & justified
@@ -106,12 +110,18 @@ If detected:
 ### Automation Sub‑Checklist
 - [ ] Minimal, precise triggers; unique `id` and `alias`
 - [ ] Randomized vs fixed `for:` per criticality on HA restart
-- [ ] Variables precomputed once; branches small & ordered cheap→expensive
+- [ ] Variables computed once at the narrowest appropriate scope; branches small & ordered cheap→expensive
+- [ ] Deferred-intent datetime helpers (deadline-style `input_datetime`) declare owner and overdue policy in `description:` and implement explicit consume behavior (clear or re-arm)
 - [ ] No device calls inside loops without guards
 - [ ] No recursive loop: if trigger entity == action target entity, a `to:` constraint and re-entry condition are mandatory
 - [ ] No logging; description/alias carry intent only
 - [ ] Trigger coverage: each trigger ID referenced exactly once; else: branch logs trigger.id for catch-all validation
 - [ ] Empty `metadata: {}`/`data: {}` blocks: acceptable if GUI-edited (editor auto-adds); remove only in pure-YAML workflows
+- [ ] Automation/script CHANGELOG formatting correct:
+  - two blank lines before **CHANGELOG:**
+  - `**CHANGELOG:**` (bold + caps)
+  - one blank line after header
+  - one blank line between each entry
 
 ### Script Sub‑Checklist
 - [ ] `mode` and `max` reflect expected concurrency
@@ -133,6 +143,16 @@ If detected:
 - [ ] Time-of-day logic uses numeric comparisons (hour/minutes), not `"HH:MM"` string comparisons
 - [ ] Randomized delays/schedules correct and deterministic for intent (inclusive ranges; `range(45, 76)` for "45–75")
 - [ ] Once-per-day schedules account for DST (anchored `at:` vs elapsed-time logic)
+- [ ] Datetime comparisons avoid Python methods; use timestamp filters for day-level logic (e.g., no `.date()`)
+- [ ] Datetime parsing uses safe fallback (`as_datetime(value, default)`)
+
+### Datetime vs Timer Selection
+- [ ] `input_datetime` used for persisted deferred intent (restart-safe deadlines, gating)
+- [ ] `timer` used only for:
+  - countdown UX
+  - cancelable grace windows
+  - protective cooldowns (e.g., compressor or API lockout)
+- [ ] Timer usage includes explicit justification if not obvious
 
 ### Deterministic Execution
 - [ ] No templated randomization in critical paths (or documented as accepted tradeoff)

@@ -43,7 +43,7 @@ template:
         from: active
         to: idle
         for:
-          seconds: "{{ range(45, 75) | random }}"
+          seconds: "{{ range(45, 76) | random }}"
 
     variables:
       # === Inputs (single-read) ===
@@ -60,7 +60,7 @@ template:
       kelvin_rgb_table: "{{ {2000:[255,180,80], 2100:[255,185,90], 2200:[255,190,100]} }}"
       rgb_from_kelvin: >-
         {% set rounded = (kelvin | int // 100) * 100 %}
-        {{ kelvin_rgb_table.get(rounded, [255, 216, 255]) }}
+        {{ kelvin_rgb_table[rounded] if rounded in kelvin_rgb_table else [255, 216, 255] }}
 
       # === Example target entities (replace with your real lights) ===
       light_brightness_only: light.example_area_main
@@ -92,7 +92,7 @@ template:
 
           items_json: >-
             {% if not has_targets %}
-              {{ [] | to_json }}
+              {{ [] | tojson }}
             {% else %}
               {% set ns = namespace(l=[]) %}
 
@@ -108,7 +108,7 @@ template:
                 {% set ns.l = ns.l + [ {'light': light_rgb_from_kelvin, 'brightness_pct': (brightness_pct | int(0)), 'rgb_color': rgb_from_kelvin} ] %}
               {% endif %}
 
-              {{ ns.l | to_json }}
+              {{ ns.l | tojson }}
             {% endif %}
 
           unavailable_entities: "{{ unavailable_entities_list }}"

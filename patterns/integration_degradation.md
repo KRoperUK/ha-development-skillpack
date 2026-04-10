@@ -32,9 +32,9 @@ device_location: >
 Data can be *present but stale*—cloud APIs sleeping, rate limits, delayed polling. Don't just check `has_value`; check age.
 
 ```jinja
-# Extract and age-check primary source
+# Extract and age-check primary source (safe datetime parsing with fallback)
 {% set as_of = state_attr('sensor.primary_external_source', 'last_update') %}
-{% set as_of_dt = as_of | as_datetime | default(none) %}
+{% set as_of_dt = as_datetime(as_of, none) %}
 {% set age_s = (as_timestamp(now()) - as_timestamp(as_of_dt)) | int(999999) if as_of_dt else 999999 %}
 {% set stale_threshold_s = 300 %}  # 5 minutes
 {% set is_stale = age_s > stale_threshold_s %}
@@ -42,7 +42,8 @@ Data can be *present but stale*—cloud APIs sleeping, rate limits, delayed poll
 # Use primary only if fresh AND present
 {% if has_value('sensor.primary_external_source') and not is_stale %}
   {{ states('sensor.primary_external_source') }}
-{% elif ... proxy ...
+{# REPLACE with your proxy witness condition #}
+{% elif ... %}
 {% endif %}
 ```
 
@@ -209,20 +210,18 @@ Apply defensively based on integration reliability tier:
 
 **Rule**: Match availability gate strictness to integration reliability. Very high reliability allows stricter AND gates. Low reliability requires full degradation + staleness + hysteresis strategy.
 
-## Checklist
-- [ ] Availability gates on critical inputs only (OR-based, prefer sensor stays available)
+## Pattern-Specific Checklist
+
 - [ ] Source priority defined: primary → proxy witness → safe default
-- [ ] All external reads have safe defaults (`| float(0)`, `| from_json(default=[])`)
-- [ ] JSON/list parsing uses safe `from_json(default=)` without string slicing
-- [ ] Staleness tracked: `as_of`, `age_s`, `is_stale` attributes computed
-- [ ] `data_quality` includes both unavailability AND staleness states
-- [ ] `active_tier` (primary|proxy|default|none) explicitly exposed for consumers
-- [ ] `source_entity` attribute shows which source is currently active
-- [ ] Hysteresis/debounce applied to prevent tier flapping (via delays or helper)
-- [ ] Downstream automations check `active_tier` or `data_quality` before critical actions
-- [ ] Proxy values are coarse-grained only (never precise/fabricated)
-- [ ] Proxy derivations marked in `reasoning` for transparency
-- [ ] Manual overrides bypass degradation checks (escape hatch)
+- [ ] Staleness tracked (`as_of`, `age_s`, `is_stale`)
+- [ ] `data_quality` reflects both unavailability AND staleness
+- [ ] `active_tier` (primary|proxy|default) exposed for consumers
+- [ ] `source_entity` identifies active source
+- [ ] Hysteresis/debounce prevents tier flapping
+- [ ] Proxy values are coarse-grained only (no fabricated precision)
+- [ ] Proxy usage clearly reflected in `reasoning`
+- [ ] Downstream automations check `active_tier` or `data_quality`
+- [ ] Manual override bypasses degradation logic
 
 ## See Also
 - `/spec/safety.md` — Manual overrides always win
