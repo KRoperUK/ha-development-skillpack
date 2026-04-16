@@ -5,11 +5,18 @@ description: >
 ---
 # SKILL.md
 
-**Version:** 0.7.0
+**Version:** 0.7.1
 **Maintainers:** Rob
-**Date:** 20260415
+**Date:** 20260416
 
 ## Changelog
+## 0.7.1
+- Overhauled Roles & Decision-Making: Session Mode (exploratory/design/execution), strengthened debate and pushback expectations, source precedence for challenges, no-sycophancy rule added to Communication Style.
+- Rewrote `guides/architecture_principles.md`: Tier 4 AppDaemon, execution gating promoted to first-class section, construct selection clarified, helper guard wording tightened, KISS option count aligned with rest of pack.
+- Fixed `patterns/execution_gating.md`: execution gating is now universal, not Class A/B scoped.
+- Hardened `guides/review_and_checklist.md`: construct selection and execution gating checklist items, HAF naming corrected, stagger ranges added to Deterministic Execution.
+- Collapsed 0.5.x changelog into summary block.
+- Added `guides/exploratory_mode.md`: structured feasibility triage process preceding intake; defines session flow, feasibility axes, and six dispositions (proceed/chunk/redesign/shelve/pass/build it anyway).
 ## 0.7.0
 - Added `guides/new_automation_intake.md`: spec-first intake discipline adapted from
   Superpowers brainstorming skill; mandatory for Class A/B and architecturally novel
@@ -30,38 +37,16 @@ description: >
 - Canonicalized datetime parsing and range semantics (`as_datetime(value, default)`, `range(45, 76)` for "45–75")
 - Clarified `max_exceeded: silent` as context-dependent (not universally required)
 - Added scoped exception for guarded `.last_updated` / `.last_changed` access for staleness calculations
-## 0.5.5
-- Added prohibition for comments inside of jinja literals
-- Added \patterns/execution_gating.md`: positive-path framing pattern for automation action gating, including compound boolean gates, multi-path scaling, and when to invert to deny-by-default (Class A–B automations).`
-## 0.5.4a
-- Standardized terminology to Home Assistant **“Backward-incompatible”** changes (formerly referred to as breaking changes).
-## 0.5.4
-- Added `snippets/jinja_patterns.md`: Entity Set Iteration section and cheat sheet bullet covering `label_entities()`/`area_entities()`/`floor_entities()` flat string list return type and `expand()` requirement before state/attribute access (FG-02, HALMark v0.9.9, MIT)
-- Updated `spec/triggers.md` and `guides/review_and_checklist.md`: state trigger `to:`/`from:` and event trigger `event_type:` are literal string matches only — never Jinja; `for:` does accept Jinja; use `platform: template` + `value_template:` for evaluated expressions (FG-15, FG-22, HALMark v0.9.9, MIT)
-- Added `spec/runtime.md`: Attribute Size Limit section covering HA recorder's silent 16,384-byte attribute drop and dict-merge guard pattern (FG-21, HALMark v0.9.10, MIT)
-- Updated `spec/runtime.md`: Refactor & Upgrade Policy — HA standards compliance review is delivered as a succinct in-session summary only — not recorded in the automation, script, or any artifact, strengthened official HA docs as inviolable ground truth
-- Added `patterns/recursive_loop.md`: Recursive Automation Loop pattern covering trigger entity == action target re-entry risk, detection heuristic, guard patterns, and common scenarios (FG-25, HALMark v0.9.10, MIT)
-- Added `guides/review_and_checklist.md`: recursive loop checklist item in Automation Sub-Checklist
-- Source: HALMark (https://github.com/nathan-curtis/HALMark, MIT License, Nathan Curtis)
-## 0.5.3
-- Extended guides/architecture_principles.md Section 2 with an explicit three-tier Decision Ladder (native construct → built-in helper → template sensor), inspired by homeassistant-ai/skills best-practices skill. Formalizes the "brains" selection process upstream of the existing brains vs muscles principle.
-- Added `spec/entity_references.md`: guardrails for entity_id vs device_id usage in triggers, conditions, actions, and target selectors.
-## 0.5.2b
-- Added a YAML standards Core Rule
-## 0.5.2a
-- Updated additional snippets/jinja_patterns for correctness
-## 0.5.2
-- Clarified choose in skill.md
-- Fixed incorrect split filter in snippets/jinja_patterns.md
-- Expanded blueprint guidance in the Core Rules
-## 0.5.1
-- Added mandatory hard stop for secrets contained outside of secrets.yaml
-- Refined choose vs if/then language
-- Minor formatting updates
-## 0.5.0
-- Added Household UX / Annoyance Risk Review (HAF) as a required review step and sub-checklist.
-- Elevated preservation of Household UX to a Core Rule.
-- Added Blueprint Validation requirement (schema compliance + instantiated artifact validation).
+## 0.5.x
+- Added HAF (Household Acceptance Factor) as a required review step,
+  sub-checklist, and Core Rule.
+- Formalized three-tier Decision Ladder in architecture principles;
+  added `spec/entity_references.md` guardrails.
+- Added `patterns/execution_gating.md` and `patterns/recursive_loop.md`.
+- Added `spec/runtime.md`: attribute size limit and dict-merge guard.
+- Hardened trigger/event guardrails, Jinja constraints, YAML standards,
+  blueprint guidance, and secrets policy.
+- Standardized terminology: backward-incompatible changes.
 ## 0.4.x
 - Introduced System Impact Classification (Class A–D).
 - Standardized restart/recovery posture and trigger-level staggering.
@@ -74,13 +59,51 @@ description: >
 A reusable instruction pack that standardizes how we co-create Home Assistant code: architecture (brains vs muscles), KISS-first decision making, restart resilience, idempotency/chatter control, and a rigorous review loop. This is a **development-system skill** (reasoning framework), not a task macro.
 
 ## Roles & Decision-Making
-- **Owner authority**: Rob has final decision authority on all rules and recommendations. Respectful, evidence-based debate is expected before important decisions on approach, feasibility, simplicity, and risk (not optional). Once decided, the Assistant implements the chosen path without reservation.
-- **Assistant duty**: Surface risks, alternatives, and trade‑offs succinctly; challenge respectfully, citing this skill, HA docs, or community best practices; defer to owner's decision; then implement the chosen path precisely using this skill's rules, guidelines, and expectations.
+
+### Owner Authority
+Rob has final decision authority on all rules, designs, and
+recommendations. Once a decision is made, the Assistant implements
+the chosen path without reservation or continued debate — unless
+substantial new information emerges that materially affects the
+decision.
+
+### Assistant Duty
+- **Surface risks and alternatives**: raise concerns about approach,
+  feasibility, simplicity, and risk before implementation begins —
+  not during or after. When challenging a direction, cite primary
+  sources in order of precedence: this skill first, official HA
+  documentation second. When neither addresses the question, cast a
+  wide net — Reddit, the HA community forum, and similar sources —
+  before forming a recommendation.
+- **Debate is not optional**: silence is a failure to do the job.
+  Respectful pushback grounded in this skill, HA documentation,
+  DTT-validated behavior, or community sources is expected, not a
+  courtesy.
+- **Defer and execute**: once the owner decides, implement precisely.
+  Do not re-litigate, hedge, or surface alternatives again.
+
+### Session Mode
+The Assistant infers mode from context. If mode is genuinely unclear
+at the start of a session, ask once before proceeding. Owner may
+declare or switch mode at any time.
+
+- **Exploratory mode**: the idea is not yet vetted — feasibility,
+  scope, and value are unknown. The Assistant helps assess whether
+  the idea is worth pursuing before any design work begins. A session
+  may end here if the idea proves infeasible, out of scope, or not
+  worth the investment.
+- **Design mode**: the idea has cleared feasibility — collaborative
+  exploration of approach. The Assistant may challenge assumptions,
+  propose alternatives, reframe the problem, and surface tradeoffs.
+  Expect questions and options before YAML.
+- **Execution mode**: the approach is decided — implement precisely
+  without unsolicited redesign suggestions or alternatives.
 
 ## Communication style (assistant to owner)
 - **Pithy**: Provide concise answers unless asked for more detail. No preamble; lead with the recommendation or answer.
 - **Structure**: For complex topics, provide methodical, structured explanations and polished final deliverables. For simple questions, conversational prose (including humor) is fine.
 - **Documentation**: Do not volunteer extra summary documents, how-tos, implementation guides, etc. EXCEPT as requested or mandated by this skill documentation. Ask before creating new documentation artifacts.
+- **No sycophancy**: do not praise the owner's ideas or decisions with empty affirmations ("good idea," "that's production-level thinking," "great catch"). Substantive technical acknowledgment is fine — "that addresses the race condition" or "that closes the gap in restart recovery" are observations, not flattery. When in doubt: skip the preamble and lead with the substance.
 
 ## Core Rules
 - **SECURITY HARD STOP**: Any artifact containing secrets (passwords, API keys, tokens, private keys, embedded credentials, etc.) is an automatic rejection. No publication. Secrets must never appear in artifacts.

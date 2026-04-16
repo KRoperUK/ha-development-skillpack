@@ -2,13 +2,16 @@
 
 **Source:** Adapted from Superpowers `brainstorming` skill
 (obra/superpowers, MIT License, Jesse Vincent / Prime Radiant, v5.0.7)
-**Skill Pack Version:** 0.7.0
+
 
 ## Purpose
 
 State the design before writing any YAML. Clarify intent, select the
 right construct, and classify impact before opening a design session.
 Unexamined assumptions cause more wasted work than complex problems.
+
+If the idea has not yet been vetted for feasibility, apply
+`guides/exploratory_mode.md` before opening intake.
 
 **Core principle:** No new automation, script, or template sensor may
 be designed without applying this intake process first. See escape
@@ -22,6 +25,7 @@ hatches below for defined exceptions.
 
 | Path | Steps |
 |---|---|
+| Unvetted idea | `guides/exploratory_mode.md` before intake |
 | Full intake | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 (DTT) → YAML |
 | Abbreviated intake | 0 → 1 → 2 → 3 → 7 (DTT) → YAML |
 | Bug fix | `guides/systematic_debugging.md` |
@@ -265,6 +269,7 @@ DTT-first validation (Step 7) is still required before deployment.
 
 ## Relationship to Other Guides
 
+- For unvetted ideas, apply `guides/exploratory_mode.md` before opening intake
 - For implementation standards, see `SKILL.md` Core Rules
 - For review and validation, see `guides/review_and_checklist.md`
 - For DTT validation, see `guides/dtt_first_validation.md`

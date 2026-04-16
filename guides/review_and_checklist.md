@@ -137,8 +137,8 @@ If detected:
 - [ ] **Comments policy**: Automations/scripts confirmed comment-free YAML; intent in `alias:` and `description:` only. Template sensors confirmed with inline comments and commented `#debug_*` attributes. AppDaemon comments for complex logic only
 - [ ] **Startup triggers** confirmed only where post-restart actions needed (state recovery, initialization); not present for passive automations
 - [ ] Brains vs muscles confirmed; scripts for fan‑outs; concurrency verified sane
-- [ ] Control flow safety confirmed: `if/then` wraps `choose/default` branches
-- [ ] No `elif` in automation/script YAML — `choose` used for mutually exclusive branches; nested `if/then/else` for prioritized execution
+- [ ] **Construct selection confirmed:** choose used only for provably mutually exclusive branches (discriminated by trigger ID, entity state, or other HA-native discriminator); if/then/else used for prioritized execution where conditions may overlap; no elif in YAML
+- [ ] **Execution gating confirmed:** automations gate on positive evidence — no action executes unless all required conditions are provably met; default to no action on uncertainty
 - [ ] Restart gates confirmed on triggers (`timer.ha_startup_delay` w/ appropriate `for:`); no action delays present
 - [ ] State trigger `to:`/`from:` and event trigger `event_type:` confirmed as **literal string matches only** — never Jinja; `for:` confirmed accepts Jinja where used; `platform: template` + `value_template:` used for evaluated expressions
 - [ ] Jinja safety confirmed: safe defaults present (`| float(0)`, `| int(0)`)
@@ -160,7 +160,6 @@ If detected:
 - [ ] Backward-incompatible changes (12 months) reviewed and confirmed
 - [ ] Exceptions documented inline (description/alias/comments)
 - [ ] Risks/alternatives/rollback documented; letter grade assigned; verdict chosen
-
 - [ ] Household UX / Annoyance Risk Review (HAF) completed (see sub-checklist)
 
 ### Automation Sub‑Checklist
@@ -212,9 +211,9 @@ If detected:
 
 ### Deterministic Execution
 - [ ] No templated randomization in critical paths (or documented as accepted tradeoff)
-- [ ] Post-restart gates use 45–75s random `for:` delay (prevents thundering herd)
+- [ ] Post-restart gates use <10s fixed for: for critical paths (safety/security); 45–75s random for: for non-critical (prevents thundering herd)
 
-### Household UX / Annoyance Risk Sub-Checklist *(aka Household Approval Factor – HAF)*
+### Household UX / Annoyance Risk Sub-Checklist *(aka Household Acceptance Factor – HAF)*
 **This review is performed AFTER all technical, structural, and safety checks are complete.**
 
 - [ ] False-trigger probability evaluated

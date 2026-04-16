@@ -4,6 +4,7 @@ Use this as your entry point. The skill is a reasoning framework and development
 
 ## Quick Start — Which Guide to Use
 
+Unvetted idea? → `guides/exploratory_mode.md` before anything else
 New automation, script, or template sensor? → `guides/new_automation_intake.md`
 Bug or unexpected behavior? → `guides/systematic_debugging.md`
 Writing or validating Jinja logic? → `guides/dtt_first_validation.md` + `cookbooks/dtt_techniques.md`
@@ -14,7 +15,7 @@ If unsure: intake for new work, debugging for existing behavior.
 
 ## Layout & Naming (kept here exclusively)
 
-- `guides/` — intake, review, validation, debugging, and principles
+- `guides/` — exploration, intake, review, validation, debugging, and principles
 - `patterns/` — behavioral design patterns (restart resilience, datetime deadlines, idempotency, chatter control, lighting paths, execution gating)
 - `cookbooks/` — DTT techniques & debugging quick-reference (see `guides/` for full methodology)
 - `snippets/` — isolated Jinja fragments and do/don't examples; not standalone deployable code
@@ -28,8 +29,8 @@ If unsure: intake for new work, debugging for existing behavior.
 
 ## Workflow
 
-1) **New work**: apply `/guides/new_automation_intake.md` before
-   any design or YAML. Escape hatches defined in that guide.
+0) **Unvetted idea**: apply `/guides/exploratory_mode.md` before intake. Produces a disposition before any design work begins.
+1) **New work**: apply `/guides/new_automation_intake.md` before any design or YAML. Escape hatches defined in that guide.
 2) **Bug fixes**: go directly to `/guides/systematic_debugging.md`.
 3) Draft using `/templates/*.yaml` (automation/script/template_sensor).
 4) Check `/spec/*` guardrails (runtime, triggers, safety, security,
