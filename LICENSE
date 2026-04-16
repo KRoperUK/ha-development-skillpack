@@ -36,3 +36,10 @@ Incorporated: FG-02, FG-15, FG-21, FG-22, FG-25 (v0.9.9–0.9.10)
 MIT License — https://github.com/homeassistant-ai/skills
 Incorporated: native construct decision ladder, helper selection hierarchy,
 device_id vs entity_id guidance (v0.5.3)
+
+**Superpowers** — Agentic Skills Framework & Software Development Methodology
+Copyright (c) 2026 Jesse Vincent / Prime Radiant
+MIT License — https://github.com/obra/superpowers
+
+Incorporated: systematic-debugging methodology, brainstorming/intake discipline,
+test-driven-development cycle (adapted as DTT-first validation) (v5.0.7)

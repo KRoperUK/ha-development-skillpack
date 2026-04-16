@@ -3,32 +3,43 @@
 Use this as your entry point. The skill is a reasoning framework for producing robust HA YAML/Jinja.
 
 ## Layout & Naming (kept here exclusively)
-- `guides/` — review how‑to & principles
+
+- `guides/` — intake, review, validation, debugging, and principles
 - `patterns/` — behavioral design patterns (restart resilience, datetime deadlines, idempotency, chatter control, lighting paths, execution gating)
-- `cookbooks/` — DTT techniques & debugging (incl. traces)
+- `cookbooks/` — DTT techniques & debugging quick-reference (see `guides/` for full methodology)
 - `snippets/` — isolated Jinja fragments and do/don't examples; not standalone deployable code
 - `templates/` — automation/script/template_sensor scaffolds + option matrix
 - `samples/` — complete, coherent YAML artifacts with alias: everywhere and YAML changelogs
 - `tools/` — helper shell scripts (`entity_snapshot.sh`, `lint_templates.sh`)
 - `spec/` — focused guardrails (runtime, triggers, safety, security, formatting, notifications, performance, entity references)
 
-**Entity naming:** `area_device_purpose` (e.g., `bedroom_ceiling_light`).  
+**Entity naming:** `area_device_purpose` (e.g., `bedroom_ceiling_light`).
 **Timestamped files (optional):** `<category>–YYYYMMDD–HHMM.yaml`.
 
 ## Workflow
-1) Draft using `/templates/*.yaml` (automation/script/template_sensor).  
-2) Check `/spec/*` guardrails (runtime, triggers, safety, security, formatting, notifications, performance, entity references).
-3) Validate logic in **DTT** first (Developer Tools → Template).  
-4) **Reviewers** make a good‑faith pass to catch Jinja issues **before** running `tools/lint_templates.sh`.  
-5) Run the linter, then submit PR following **/guides/review_and_checklist.md**.  
-6) Include concise **CHANGELOG** in YAML descriptions or `#` comments; **do not** keep changelog in `SKILL.md`.
+
+1) **New work**: apply `/guides/new_automation_intake.md` before
+   any design or YAML. Escape hatches defined in that guide.
+2) **Bug fixes**: go directly to `/guides/systematic_debugging.md`.
+3) Draft using `/templates/*.yaml` (automation/script/template_sensor).
+4) Check `/spec/*` guardrails (runtime, triggers, safety, security,
+   formatting, notifications, performance, entity references).
+5) Validate logic in **DTT** first — see `/guides/dtt_first_validation.md`
+   for the full validation cycle.
+6) **Reviewers** make a good‑faith pass to catch Jinja issues
+   **before** running `tools/lint_templates.sh`.
+7) Run the linter, then submit PR following
+   `/guides/review_and_checklist.md`.
+8) Include concise **CHANGELOG** in YAML descriptions or `#` comments;
+   **do not** keep changelog in `SKILL.md`.
 
 ## Glossary (no shorthand assumptions)
+
 - **HA**: Home Assistant
 - **DTT**: Developer Tools → **Template**
 - **BC**: **Backward-Incompatible Change** (often called a **breaking change**) — a change that requires user configuration updates or removes/deprecates existing HA schema, keys, attributes, services, or behavior.
 - **HAF**: **Household Acceptance Factor** — acceptance of all in the home for automation behavior and nuisance alerts.
-- **Idempotent**: Running the same action again doesn’t change state
+- **Idempotent**: Running the same action again doesn't change state
 - **Brains vs Muscles**: templates decide; automations/scripts act
 - **Hysteresis**: guards to prevent oscillation between states
 - **Staggering**: randomized restart delay to avoid storms

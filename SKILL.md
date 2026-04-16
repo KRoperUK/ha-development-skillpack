@@ -5,10 +5,24 @@ description: >
 ---
 # SKILL.md
 
-**Version:** 0.6.0
+**Version:** 0.7.0
 **Maintainers:** Rob
+**Date:** 20260415
 
 ## Changelog
+## 0.7.0
+- Added `guides/new_automation_intake.md`: spec-first intake discipline adapted from
+  Superpowers brainstorming skill; mandatory for Class A/B and architecturally novel
+  work; abbreviated for Class C/D routine work; includes SIC gate and construct-
+  selection branch (native → template sensor → automation/script → AppDaemon)
+- Added `guides/dtt_first_validation.md`: RED/GREEN/REFACTOR validation cycle reframed
+  in DTT-first vocabulary; replaces TDD software framing with HA-native equivalents
+- Added `guides/systematic_debugging.md`: four-phase root-cause debugging methodology
+  adapted from Superpowers; HA-localized with Developer Tools and Trace substitutions
+- Added complexity-scaling rule: process depth gated on impact class + novelty axes,
+  not impact alone; documented in new_automation_intake.md
+- Added `LICENSE` third-party attribution for Superpowers (obra/superpowers, MIT,
+  Jesse Vincent / Prime Radiant, v5.0.7)
 ## 0.6.0
 - Added `patterns/datetime_deadline.md`: canonical datetime-based deferred intent pattern
 - Updated doctrine: `input_datetime` is now the default for deferred one-shot intent; `timer` limited to countdown use cases
@@ -71,10 +85,11 @@ A reusable instruction pack that standardizes how we co-create Home Assistant co
 ## Core Rules
 - **SECURITY HARD STOP**: Any artifact containing secrets (passwords, API keys, tokens, private keys, embedded credentials, etc.) is an automatic rejection. No publication. Secrets must never appear in artifacts.
 - **System Impact Classification**: All systems MUST be classified by worst-credible impact (Class A–D) before design to determine required rigor, defensive programming posture, and validation depth.  See `/guides/system_impact_class.md`.
-- **KISS first**: Prefer the simplest design that solves the problem robustly. For complex problems, silently propose **3–10 options**, compare trade‑offs, and converge on the simplest viable path.
+- **Intake discipline**: No new automation, script, or template sensor may be designed without first applying `/guides/new_automation_intake.md`. See that guide for defined escape hatches.
+- **KISS first**: Prefer the simplest design that solves the problem robustly. For complex problems, propose **2–3 viable options** with trade-offs and converge on the simplest viable path.
 - **YAML standards**: Always use (current release − 1) HA standards: Target the prior stable release (e.g., if current is 2026.2.x, use 2026.1.x standards). Consult official HA documentation before using any syntax not already demonstrated in this skill's examples.
 - **GUI‑friendly YAML**: always include `alias:` and `description:`; use plural keys (`triggers`, `conditions`, `actions`); add `id:` per trigger; add `alias:` on nested steps (variables, if/then, choose, repeat sequences).
-- **Conditional Control Flow**: Use `choose` only for **100% mutually exclusive branches** (each condition impossible if prior conditions were false). Exclusivity must be provable from system state alone — entity states, trigger IDs, or other HA-native discriminators — not assumed by convention, environment, or operational expectation. Use `if/elif/else` when conditions overlap or precedence matters (e.g., manual override escaping all checks). 
+- **Conditional Control Flow (automation/script YAML)**: Use `choose` for **100% mutually exclusive branches** — exclusivity must be provable from system state alone (entity states, trigger IDs, or other HA-native discriminators), not assumed. Use nested `if/then/else` for prioritized execution where conditions may overlap. **`elif` is not valid in HA YAML** — use `choose` or nested `if/then/else` instead. (`elif` is valid in Jinja and AppDaemon Python; this rule is YAML-only.)
 - **All automations must declare `mode:`** (e.g., `mode: single` to prevent duplicate actions). 
 - **Ensure all trigger states are reachable** (no dead code branches); validate downstream actions handle all trigger states. Reachability must account for restart states (unknown, unavailable) and restored helper values.
 - **Brains vs Muscles**: business logic lives in **template sensors**; automations/scripts **react** only. Keep actions minimal and idempotent.
@@ -88,18 +103,21 @@ A reusable instruction pack that standardizes how we co-create Home Assistant co
 - **Graceful Integration Degradation**: Sensors depending on external APIs or unreliable integrations must degrade gracefully. Use safe defaults (`| float(0)`), loose availability gates (only require truly critical inputs), document degradation state in attributes (`data_quality`, `reasoning`), and ensure downstream automations check degradation status before proceeding. See `/patterns/integration_degradation.md`.
 - **Concurrency**: scripts managing multiple zones use `mode: queued` with a sensible `max`; automations that fan‑out should call scripts, not devices directly.
 - **Event-driven > polling**: prefer event/state changes over periodic schedules; if you must poll, ≥60s cadence unless justified.
-- **Test atomically first**: Validate all Jinja, entity references, and sensor outputs in Developer Tools → Templates **before** deploying to automations/sensors/scripts. Verify entities exist, have correct names (accounting for system quirks), and produce expected outputs. Theoretical logic often fails in production contexts (e.g., full filtering in trigger `for:` blocks, entity naming mismatches).
+- **DTT-first validation**: Validate all Jinja, entity references, and expected state outputs in Developer Tools → Templates before implementation or deployment. Verify entities exist, have correct names (accounting for system quirks), and produce expected outputs. Theoretical logic often fails in production contexts (e.g., full filtering in trigger `for:` blocks, entity naming mismatches). See `/guides/dtt_first_validation.md` for the full validation cycle.
 - **Back-compat**: address Home Assistant **backward-incompatible (breaking) changes** from the last **12 months** affecting artifacts being authored, modified, or reviewed.
 - **Comments policy**: Automations & scripts—**no comments**; use `description:` and `alias:` only. Template sensors—**optional** `#debug_*`, `# deps:`, `# verified:` comments for clarity. AppDaemon code—comments allowed for complex logic (use judiciously).
 - **Exceptions**: allowed, but **must be documented inline** in `description`, `alias`, or sensor `#comments`.
 - **Precise Updates**: When modifying complex existing systems, **favor surgical edits** over comprehensive rewrites (unless refactoring is explicitly approved); minimize diff footprint for easier review and rollback.
 - Timezone: **America/Los_Angeles** (local time). Use `as_timestamp()` for time math.
 - **Blueprints are packaging only**: The instantiated artifact must be indistinguishable from a first-class automation/script in structure, safety posture, and review rigor; template on the underlying artifact type first, and validate all blueprint-specific schema strictly against official Home Assistant documentation—conflicts are Skill Pack update candidates, not blueprint exceptions.
+- **Authoritative artifacts**: Only Skill Pack–reviewed artifacts are considered final. All plans, drafts, or external tool outputs are non-authoritative and must be reviewed before implementation.
 - Reliability includes **preservation of Household UX**; repeated annoyance constitutes a production-level defect.
 
 
 ## Review Process
-Use **/guides/review_and_checklist.md** for the end‑to‑end review flow, rubric, and copy‑paste checklists (kept in sync with this page).
+- For new or novel work, begin with **/guides/new_automation_intake.md** before opening a design session. 
+- For bug fixes to existing designs, go directly to **/guides/systematic_debugging.md**. 
+- For implementation, use **/guides/review_and_checklist.md** for the end‑to‑end review flow, rubric, and copy‑paste checklists (kept in sync with this page).
 
 ## Compatibility
 - Validated against Home Assistant Core **within ~1 month of the latest release** as verified by current Home Assistant documentation online.
