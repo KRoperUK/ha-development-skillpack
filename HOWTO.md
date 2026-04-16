@@ -1,6 +1,16 @@
 # HOWTO (Onboarding & Table of Contents)
 
-Use this as your entry point. The skill is a reasoning framework for producing robust HA YAML/Jinja.
+Use this as your entry point. The skill is a reasoning framework and development discipline for designing, validating, debugging, and reviewing robust HA YAML, Jinja, and AppDaemon code.
+
+## Quick Start — Which Guide to Use
+
+New automation, script, or template sensor? → `guides/new_automation_intake.md`
+Bug or unexpected behavior? → `guides/systematic_debugging.md`
+Writing or validating Jinja logic? → `guides/dtt_first_validation.md` + `cookbooks/dtt_techniques.md`
+Reviewing before deployment? → `guides/review_and_checklist.md`
+Quick debugging tools reference? → `cookbooks/debugging.md`
+
+If unsure: intake for new work, debugging for existing behavior.
 
 ## Layout & Naming (kept here exclusively)
 
@@ -37,11 +47,13 @@ Use this as your entry point. The skill is a reasoning framework for producing r
 
 - **HA**: Home Assistant
 - **DTT**: Developer Tools → **Template**
+- **DTT-first**: Developer Tools → Templates validation before any deployment; see `guides/dtt_first_validation.md`
 - **BC**: **Backward-Incompatible Change** (often called a **breaking change**) — a change that requires user configuration updates or removes/deprecates existing HA schema, keys, attributes, services, or behavior.
 - **HAF**: **Household Acceptance Factor** — acceptance of all in the home for automation behavior and nuisance alerts.
 - **Idempotent**: Running the same action again doesn't change state
 - **Brains vs Muscles**: templates decide; automations/scripts act
 - **Hysteresis**: guards to prevent oscillation between states
+- **SIC**: System Impact Classification — worst-credible impact rating (Class A–D) assigned before design; see `guides/system_impact_class.md`
 - **Staggering**: randomized restart delay to avoid storms
 - **Timezone**: America/Los_Angeles (local time)
 
