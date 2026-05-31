@@ -41,8 +41,7 @@ If unsure: intake for new work, debugging for existing behavior.
    **before** running `tools/lint_templates.sh`.
 7) Run the linter, then submit PR following
    `/guides/review_and_checklist.md`.
-8) Include concise **CHANGELOG** in YAML descriptions or `#` comments;
-   **do not** keep changelog in `SKILL.md`.
+8) Include concise **CHANGELOG** in YAML descriptions or `#` comments.
 
 ## Glossary (no shorthand assumptions)
 
@@ -51,9 +50,7 @@ If unsure: intake for new work, debugging for existing behavior.
 - **DTT-first**: Developer Tools → Templates validation before any deployment; see `guides/dtt_first_validation.md`
 - **BC**: **Backward-Incompatible Change** (often called a **breaking change**) — a change that requires user configuration updates or removes/deprecates existing HA schema, keys, attributes, services, or behavior.
 - **HAF**: **Household Acceptance Factor** — acceptance of all in the home for automation behavior and nuisance alerts.
-- **Idempotent**: Running the same action again doesn't change state
 - **Brains vs Muscles**: templates decide; automations/scripts act
-- **Hysteresis**: guards to prevent oscillation between states
 - **SIC**: System Impact Classification — worst-credible impact rating (Class A–D) assigned before design; see `guides/system_impact_class.md`
 - **Staggering**: randomized restart delay to avoid storms
 - **Timezone**: America/Los_Angeles (local time)

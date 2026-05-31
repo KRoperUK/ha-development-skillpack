@@ -16,7 +16,7 @@ max: 10
 
 fields:
   target:
-    description: Target light entity (required). Accept entity ID string or {entity_id: "..."} mapping.
+    description: Target light entity (required). Accept entity ID string or entity_id mapping.
     example: light.kitchen
     required: true
   brightness_pct:

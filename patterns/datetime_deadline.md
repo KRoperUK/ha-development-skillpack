@@ -130,28 +130,44 @@ No alternate interpretations are allowed.
 
 ## Canonical Semantics Template
 
-Use a single parsed deadline and evaluate all semantics from that parsed value.
+Use `as_timestamp()` for all deadline comparisons. Direct object comparison
+between `as_datetime()` output and `now()` raises a `TypeError` at runtime
+because `as_datetime()` on a bare string produces an offset-naive datetime
+while `now()` is offset-aware. This is a silent production failure — no
+YAML-level warning.
 
-```jinja
-{% set deadline_str = states('input_datetime.pool_pump_override_deadline') %}
-{% set sentinel_str = '2999-01-01 00:00:00' %}
+**Correct pattern (timestamp-based):**
 
-{% set deadline = as_datetime(deadline_str, as_datetime('2999-01-01 00:00:00')) %}
-{% set active = deadline != as_datetime('2999-01-01 00:00:00') %}
-{% set due = active and now() >= deadline %}
+\```jinja
+{% set sentinel_ts = as_timestamp(as_datetime('2999-01-01 00:00:00')) | float(0) %}
+{% set deadline_ts = as_timestamp(as_datetime(
+     states('input_datetime.pool_pump_override_deadline'),
+     as_datetime('2999-01-01 00:00:00'))) | float(0) %}
+{% set now_ts = as_timestamp(now()) | float(0) %}
+{% set active = deadline_ts != sentinel_ts %}
+{% set due = active and now_ts >= deadline_ts %}
 
 active={{ active }}
 due={{ due }}
-deadline={{ deadline }}
-```
+\```
+
+**Do NOT use object comparison — this raises TypeError at runtime:**
+
+\```jinja
+{# WRONG — raises TypeError: can't compare offset-naive and offset-aware datetimes #}
+{% set deadline = as_datetime(deadline_str, as_datetime('2999-01-01 00:00:00')) %}
+{% set active = deadline != as_datetime('2999-01-01 00:00:00') %}
+{% set due = active and now() >= deadline %}
+\```
 
 Interpretation:
 
-* inactive = `deadline == sentinel`
-* active = `deadline != sentinel`
-* due = `active and now() >= deadline`
+* inactive = `deadline_ts == sentinel_ts`
+* active = `deadline_ts != sentinel_ts`
+* due = `active and now_ts >= deadline_ts`
 
-Unparseable or unavailable values are treated as **inactive** via fallback to the sentinel literal (`as_datetime('2999-01-01 00:00:00')`).
+Unparseable or unavailable values fall back to sentinel via the `as_datetime()`
+default argument, producing `deadline_ts == sentinel_ts` → inactive.
 
 Use real entity IDs in production code. Avoid alternate semantics.
 

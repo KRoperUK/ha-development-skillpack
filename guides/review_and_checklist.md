@@ -22,9 +22,10 @@ If detected:
    - Document any **Context Elevation** reasoning if applicable.
    - The assigned class determines the required rigor for all subsequent review steps.
 1) **KISS gate**
-   - Propose a simpler alternative if one exists; document why rejected.
-   - Remove any triggers, conditions, actions, or logic not required by the stated intent — do not add complexity in anticipation of requirements that don't exist yet.
-   - For complex problems, generate 3–5 candidate approaches internally, filter for feasibility, and present the **2–3 viable options** — choose the simplest.
+   - Prefer Home Assistant native functionality, helpers, integrations, triggers, and conditions over custom YAML/Jinja when they express the behavior clearly, deterministically, and with less long-term maintenance risk.
+   - Propose a simpler alternative when one is materially simpler; document why rejected if not chosen.
+   - Remove any triggers, conditions, actions, or logic not required by the stated intent — do not add complexity in anticipation of requirements that do not exist yet.
+   - For complex problems, generate 3–5 candidate approaches internally, filter for feasibility, and present the **2–3 viable options** — choose the simplest viable option.
 2) **Syntax & Structure**
    - Use **current release -1** as minimum YAML/Jinja standards (per Home Assistant docs); reject deprecated or "also works" syntax.
    - GUI‑friendly YAML: `alias`, `description`; plural keys; `id:` per trigger; `alias:` at all levels (triggers/conditions/actions/variables/repeat branches).
@@ -81,6 +82,7 @@ If detected:
 13) **Exceptions**
     - Deviations allowed **only if documented inline** (in `description`, `alias`, or sensor comments).
 14) **Self‑Critique & Verdict**
+    - Pre-output sanity scan: no unresolved TODOs/placeholders, no internal contradictions, no unrequested scope expansion, no unresolved ambiguity, and no mismatch between stated intent and delivered artifact.
     - Risks, alternatives, rollback. Verdict categories below.
     - Assign a letter grade using the scale below. Anything below
       A- must have fixes proposed or applied before the session ends,
@@ -106,6 +108,17 @@ If detected:
       - **F** — hard stop; secrets present, Class A/B safety violation,
         or fundamental design failure
 
+    ## Optional Safety-Level Summary
+    When useful, summarize the highest safety level demonstrated:
+
+    - **L0 — Syntax Safe:** YAML/Jinja parses and schema shape is valid.
+    - **L1 — Type Safe:** HA state types, casts, fallbacks, and unavailable values are handled.
+    - **L2 — Behavior Safe:** DTT validation covers normal, unavailable, startup, and boundary states.
+    - **L3 — Steward Safe:** edits are surgical; entity IDs, aliases, comments, scope, and user intent are preserved.
+    - **L4 — Operator Safe:** live validation surfaces such as config check, traces, logs, or Developer Tools confirm behavior.
+
+    This summary does not replace the Skill Pack checklist, verdict, or grade.        
+        
 15) **Blueprint Validation (if used)**
     - Confirm compliance with the official Home Assistant blueprint schema and validate at least one instantiated artifact against all standard automation/script expectations before approval.
 16) **Household UX / Annoyance Risk Review (HAF) completed**
@@ -164,6 +177,7 @@ If detected:
 
 ### Automation Sub‑Checklist
 - [ ] Minimal, precise triggers; unique `id` and `alias`
+  - Note: trigger id uniqueness is required when triggers route to different evaluation paths. Multiple triggers may share an id when they intentionally collapse to a single identical evaluation sequence.
 - [ ] Randomized vs fixed `for:` per criticality on HA restart
 - [ ] Variables computed once at the narrowest appropriate scope; branches small & ordered cheap→expensive
 - [ ] Deferred-intent datetime helpers (deadline-style `input_datetime`) declare owner and overdue policy in `description:` and implement explicit consume behavior (clear or re-arm)
