@@ -1,4 +1,8 @@
 ## Changelog
+## 0.7.4
+- Added spec/zwave_js.md - Z-Wave JS Central Scene authoring guidance for exact device triggers, raw event routing, and the `value`/`value_raw` mismatch footgun.
+- Added guides/cloud_api_actuation.md — defensive actuation pattern for cloud-backed entities covering confirm-retry-notify, recovery trigger, branch gate expansion, sustained unavailability hold, and complete trigger set reference.
+- Added guides/integration_watchdog.md — config entry reload watchdog pattern for integrations with known, recurring, recoverable failure modes.
 ## 0.7.3
 - Overhauled dtt_techniques.md with extremely successful scaffolding for uncovering issues
 - Moved skill changelog into its own file

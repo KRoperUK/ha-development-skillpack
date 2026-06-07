@@ -22,7 +22,7 @@ If unsure: intake for new work, debugging for existing behavior.
 - `templates/` — automation/script/template_sensor scaffolds + option matrix
 - `samples/` — complete, coherent YAML artifacts with alias: everywhere and YAML changelogs
 - `tools/` — helper shell scripts (`entity_snapshot.sh`, `lint_templates.sh`)
-- `spec/` — focused guardrails (runtime, triggers, safety, security, formatting, notifications, performance, entity references)
+- `spec/` — focused guardrails (runtime, triggers, Z-Wave JS, safety, security, formatting, notifications, performance, entity references)
 
 **Entity naming:** `area_device_purpose` (e.g., `bedroom_ceiling_light`).
 **Timestamped files (optional):** `<category>–YYYYMMDD–HHMM.yaml`.

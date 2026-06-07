@@ -5,6 +5,9 @@
 
 ---
 
+## ⚠️ Upcoming restructure
+This skill pack has grown large enough to warrant a structural review. A refactor is planned that will reorganize guides, trim scope, and potentially split companion content into separate referenced skills. If you are forking or building on this, expect breaking changes to file paths and structure in an upcoming version.
+
 ## What this is
 
 This repository contains a **[skill](https://github.com/anthropics/skills) pack** I use when vibe coding (h/t to Anthropic, but it also works as a project file with ChatGPT) with Home Assistant YAML and Jinja.  It compiles and documents the things that have worked and approaches to fix those that LLMs still get wrong much of the time.

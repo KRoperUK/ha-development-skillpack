@@ -30,7 +30,7 @@ following open-source projects:
 **HALMark** — Home Assistant LLM Stewardship Benchmark
 Copyright (c) 2026 Nathan Curtis
 MIT License — https://github.com/nathan-curtis/HALMark
-Incorporated: selected HA footgun patterns and stewardship/safety-level review model (v0.9.9–0.9.10)
+Incorporated: selected HA footgun patterns and stewardship/safety-level review model (v0.9.9–0.9.15-draft)
 
 **homeassistant-ai/skills** — Home Assistant Agent Skills
 MIT License — https://github.com/homeassistant-ai/skills
