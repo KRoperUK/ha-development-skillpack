@@ -10,8 +10,10 @@
 - **Always type states**: `states('sensor.x') | int(0)` / `| float(0)` *(or `float(none)` if 0 would be misleading)* → [Safe Reads](#safe-reads), [Nullable Attributes](#nullable-attributes--violation-flags)
 - **Availability first**: `has_value('sensor.x')` *(and `| trim != ''` for REST/MQTT blanks)* → [Existence & Availability](#existence--availability)
 - **Text normalization**: `| lower | trim` → [Text Normalization](#text-normalization)
-- **Time math**: `as_timestamp()` / `now()`; avoid `.total_seconds()`; use `default=none` for non-timestamps → [Datetime Safety](#datetime-safety)
+- **Time math**: prefer `as_timestamp()` / `now()`; avoid `.total_seconds()` except for the guarded `.last_changed` / `.last_updated` staleness exception → [Datetime Safety](#datetime-safety), [Attribute Access](#attribute-access)
+- **Datetime parsing**: `as_datetime(value, default)` two-argument form only; never pipe-chain `| as_datetime | default()` → [Datetime Safety](#datetime-safety)
 - **Attributes**: `state_attr('entity','attr') | default(...)` (never `states.entity.attributes...`) → [Attribute Access](#attribute-access)
+- **No direct state-object access**: use `states()` and `state_attr()` exclusively; `.last_updated`/`.last_changed` permitted only for staleness/age with existence guard → [Attribute Access](#attribute-access)
 - **JSON out**: `| tojson` → [JSON Packaging](#json-packaging)
 - **CSV list**: `regex_findall('[^,]+') | map('trim') | map('lower') | reject('equalto','') | unique | list` → [String Operations](#string-operations-use-filters-not-python-methods)
 - **Dict lookups**: prefer `'key' in d` + indexing; allow `.get()` only on literal dicts → [Dict Lookup With Defaults](#dict-lookup-with-defaults-scoped-get-guidance)
@@ -120,7 +122,24 @@ below).
 
 **Note:**\
 - `as_timestamp()` will return `none` (via `default=none`) if the state is not parseable as a timestamp (e.g., `"on"`).\
-- Never access `.last_changed` via `states.sensor.x.last_changed` in templates; use supported helpers (`states()`, `state_attr()`, `as_timestamp()`) and explicit guards.
+- Never access `.last_changed` / `.last_updated` through direct state-object paths except under the narrow staleness/age exception documented in [Attribute Access](#attribute-access). For ordinary state and attribute reads, use `states()` and `state_attr()` only.
+
+### Parsing datetime strings (`input_datetime` states, ISO strings)
+
+Use the two-argument form of `as_datetime()` to provide a safe fallback. Never pipe-chain `| as_datetime | default()` — the pipe form raises on unparseable input before `default()` can catch it.
+
+**Do**
+
+``` jinja
+{% set deadline = as_datetime(states('input_datetime.foo'), none) %}
+{% if deadline is not none and now() >= deadline %}
+```
+
+**Don't**
+
+``` jinja
+{% set deadline = states('input_datetime.foo') | as_datetime | default(none) %}
+```
 
 
 ------------------------------------------------------------------------
@@ -180,6 +199,27 @@ only when zero is a legitimate safe fallback.
 {{ states.light.kitchen.attributes.brightness }}
 ```
 
+### Direct state-object access prohibition
+
+Never access the state object directly (e.g., `states.sensor.x.state`, `states.sensor.x.attributes.foo`). Use `states()` and `state_attr()` exclusively — direct object access bypasses unavailable-state handling and breaks silently when entities are missing.
+
+**Narrow exception**: `.last_updated` and `.last_changed` are permitted for staleness/age calculations only, because no helper equivalent exists. They must be guarded (entity exists check first) and used only for time semantics — never for state or attribute reads.
+
+**Do**
+
+``` jinja
+{% if has_value('sensor.foo') %}
+  {% set age = (now() - states.sensor.foo.last_changed).total_seconds() %}
+{% endif %}
+```
+
+**Don't**
+
+``` jinja
+{{ states.sensor.foo.state }}
+{{ states.sensor.foo.attributes.brightness }}
+```
+
 ------------------------------------------------------------------------
 
 ## JSON Packaging
@@ -203,7 +243,7 @@ only when zero is a legitimate safe fallback.
 **Do**
 
 ``` jinja
-{% set d = states('sensor.payload') | from_json | default({}) %}
+{% set d = states('sensor.payload') | from_json(default={}) %}
 {% set val = d['key'] if 'key' in d else 0 %}
 ```
 
@@ -217,7 +257,7 @@ only when zero is a legitimate safe fallback.
 **Don't**
 
 ``` jinja
-{{ states('sensor.payload') | from_json | default({}) .get('key', 0) }}
+{{ states('sensor.payload') | from_json(default={}) .get('key', 0) }}
 ```
 
 **Rule:**
@@ -238,7 +278,7 @@ only when zero is a legitimate safe fallback.
 **Do**
 
 ``` jinja
-{% set d = states('sensor.payload') | from_json | default({}) %}
+{% set d = states('sensor.payload') | from_json(default={}) %}
 {% set item = (d['outer']['inner'] if 'outer' in d and 'inner' in d['outer'] else 0) %}
 ```
 

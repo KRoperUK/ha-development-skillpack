@@ -1,11 +1,11 @@
 # Option Matrix – Decision Template
 
-> Use this when a problem has multiple viable designs. Keep KISS in mind: the goal is to surface 3–10 options, compare crisply, and choose the simplest robust path.
+> Use this when a problem has multiple viable designs. Keep KISS in mind: the goal is to surface 3–5 options, compare crisply, and choose the simplest robust path.
 
 ## Problem Statement
 One sentence on what we’re solving and constraints.
 
-## Candidate Options (3–10)
+## Candidate Options (3–5)
 1. Option A — short name
 2. Option B — short name
 3. Option C — short name

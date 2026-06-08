@@ -1,4 +1,15 @@
-# Architecture Principles (Expanded)
+# Architecture Principles
+
+## Operating Rules
+
+- **Impact classification**: Classify worst-credible failure impact (Class A–D) before any design work begins.
+- **KISS**: Generate 3–5 options internally, present 2–3 viable ones, and choose the simplest robust path.
+- **Decision ladder**: Native construct → helper → template sensor → AppDaemon. Stop at the first tier that solves the problem.
+- **Brains vs muscles**: Template sensors compute directives, intent, and reason; automations/scripts react deterministically and perform actuation.
+- **Overrides first**: Manual overrides, safety gates, and house/guest modes are evaluated before normal logic — no exceptions.
+- **Fast-fail ordering**: Override/safety gates first, cheap state/existence checks second, expensive Jinja last.
+- **Construct selection**: Use `choose` only for provably mutually exclusive branches. Use `if/then/else` for overlapping or prioritized conditions. `elif` is not valid in HA YAML.
+- **Startup gating**: Gate non-trivial restart-sensitive work on `timer.ha_startup_delay → idle`; use trigger-level `for:` for startup staggering.
 
 ## 0) System Impact Classification
 See: `/guides/system_impact_class.md`
@@ -50,6 +61,7 @@ Tier 4 — AppDaemon: Preferred when YAML is insufficient — long-lived state, 
 - Cheap checks first; heavy Jinja last; precompute commonly used values.
 - Avoid repeated `states()` calls; cache into variables.
 - No templated randomization in critical paths unless documented as an accepted tradeoff.
+- **Fast-fail condition ordering**: order conditions to short-circuit early on common rejection cases — prioritize likely failures and cheap checks (entity existence, simple state matches, override/safety gates) before expensive Jinja evaluation. Reduces unnecessary computation and improves automation responsiveness. Applies to both the top-level `conditions:` block and `if/then` branches within actions.
 
 ## 7) Idempotency & Chatter
 - Guard physical device calls versus current state; avoid unnecessary chatter guards on HA-native helper writes where the write is cheap and deterministic.

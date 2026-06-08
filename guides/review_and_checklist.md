@@ -2,10 +2,40 @@
 
 For new or novel work, complete `/guides/new_automation_intake.md`
 before opening a review. For bug fixes, use
-`/guides/systematic_debugging.md`. Review begins after intake is
-complete and DTT validation has passed.
+`/guides/systematic_debugging.md`. Review begins after the relevant
+intake or debugging step is complete. DTT validation is mandatory
+before deployment approval, but design or patch reviews may occur
+before DTT when the artifact is not yet ready to run.
 
-Use this for every change. Goal: **simplest robust** solution that is restart‑safe, idempotent, and observable.
+## Review Process Summary
+
+**Before starting**: surgical edits over rewrites — minimum diff footprint; rewrites require explicit approval.
+
+| Step | Gate | Hard stop? |
+|------|------|------------|
+| 0 | **Security** — scan for secrets/identifying material | ✅ Yes |
+| — | **Pre-deployment validation triage** — scan for risk triggers requiring specific validation before deployment approval | |
+| 1 | **Impact classification** — Class A–D; determines rigor for all steps below | ✅ Yes for A/B without risk assessment |
+| 2 | **KISS** — simplest viable solution; 2–3 options presented for non-trivial problems | |
+| 3 | **Syntax & structure** — GUI-friendly YAML, plural keys, alias/description in automations/scripts only, comments policy | |
+| 4 | **DTT validation** — all Jinja and entity references proven before **deployment approval** | ✅ Yes for deployment |
+| 5 | **Traces** — orchestration/timing verified via Automation Traces where needed | |
+| 6 | **Live test** — happy-path trigger exercised | |
+| 7 | **Intent alignment** — implementation matches stated intent; conditions ordered correctly; network traffic minimized | |
+| 8 | **Wait/timeout** — `wait_template` preferred; exclusion lists guard empty string | |
+| 9 | **Restart & recovery** — correct `for:` windows; no action delays for staggering | |
+| 10 | **Idempotency & chatter** — device call guards; batching; rate-limiting | |
+| 11 | **Overrides & safety** — manual/guest/safety modes confirmed to win | |
+| 12 | **Backward-compat** — last 12 months of breaking changes reviewed; confirm `BC review: done` or `BC review: N/A` | |
+| 13 | **Changelog** — entry added in correct format and location | |
+| 14 | **Exceptions** — any deviations documented inline | |
+| 15 | **Blueprint validation** — if applicable | |
+| 16 | **HAF** — household UX impact reviewed; annoyance risk mitigated | ✅ Yes for shared spaces |
+| 17 | **Self-critique & grade** — A- minimum for production; verdict assigned | |
+
+**Grading minimum**: A- for production deployment. Anything below requires fixes or explicit deferral with documented rationale.
+
+Use section **A)** for the full flow, **A1)** for hard stops, **C)** for copy-paste checklists.
 
 ## Blocking Gate — Secret & Identifying Material
 - Compliant with `spec/security.md` (no secret or identifying material present).
@@ -15,80 +45,84 @@ If detected:
 - Stop review
 - Do not continue architectural analysis
 
+## Pre-Deployment Validation Triage
+
+Before deployment approval, scan for risk triggers that require specific validation:
+
+- **Touches physical devices?** Confirm idempotency, chatter control, and manual override behavior.
+- **Runs on startup or HA restart?** Confirm startup gate, restart staggering, and unavailable-entity behavior.
+- **Uses high-frequency triggers or noisy sensors?** Confirm debounce, rate limit, and oscillation control.
+- **Uses Jinja?** Confirm DTT validation and safe unavailable-state handling.
+- **Uses time/deadline logic?** Confirm timezone handling, restart resilience, and timer vs `input_datetime` selection.
+- **Calls cloud/API/integration services?** Confirm availability handling, bounded retry, cooldowns, and no reload/command storms.
+- **Affects shared spaces, sleep, comfort, safety, or household schedules?** Confirm HAF review.
+- **Refactors existing behavior?** Confirm surgical diff, preserved intent, and rollback path.
+
 ## A) Review Flow (Detailed)
-0) **System Impact Classification**: Before review, classify the system by **worst-credible impact if it fails** (Class A–D) using `/guides/system_impact_class.md`.
-   - Record the selected class.
-   - Briefly note the worst-credible failure mode.
-   - Document any **Context Elevation** reasoning if applicable.
-   - The assigned class determines the required rigor for all subsequent review steps.
-1) **KISS gate**
-   - Prefer Home Assistant native functionality, helpers, integrations, triggers, and conditions over custom YAML/Jinja when they express the behavior clearly, deterministically, and with less long-term maintenance risk.
-   - Propose a simpler alternative when one is materially simpler; document why rejected if not chosen.
-   - Remove any triggers, conditions, actions, or logic not required by the stated intent — do not add complexity in anticipation of requirements that do not exist yet.
-   - For complex problems, generate 3–5 candidate approaches internally, filter for feasibility, and present the **2–3 viable options** — choose the simplest viable option.
-2) **Syntax & Structure**
-   - Use **current release -1** as minimum YAML/Jinja standards (per Home Assistant docs); reject deprecated or "also works" syntax.
-   - GUI‑friendly YAML: `alias`, `description`; plural keys; `id:` per trigger; `alias:` at all levels (triggers/conditions/actions/variables/repeat branches).
-   - **Comments only in template sensors** (`#debug_*`, `# deps:`, `# verified:`). Automations and scripts use `alias:` and `description:` only.
-3) **DTT Probes (Developer Tools → Template) — Mandatory Pre-Deployment**
-   - See `/guides/dtt_first_validation.md` for the full validation
-     cycle including entity pre-flight, consolidated expression
-     requirements, and mock variable patterns.
-   - Validate all Jinja logic and entity references in Developer
-     Tools → Templates before deployment. Confirm entity references
-     via `has_value()` pre-flight (usable-state check) and
-     defined-entity validation where required.
-   - For unavailable or degraded states, use mock variables
-     (`{% set %}` substitutions) to validate logic branches — do
-     not rely solely on current live state.
-   - If logic passes DTT but fails after deployment, the discrepancy
-     is a diagnostic signal — go to `/guides/systematic_debugging.md`
-     rather than iterating blindly in DTT.
-   - See `cookbooks/dtt_techniques.md` for patterns.
-4) **Traces vs DTT**
-   - Use **DTT** for template logic and unit‑style checks.
-   - Use **Automation Traces** only when orchestration/timing must be verified. No repo‑wide `store_traces: true` mandate.
-5) **Live Test**
-   - Exercise a happy‑path trigger. Observe Logbook only for significant events; otherwise remain silent.
-6) **Best-in-Class Review (Intent Alignment)**
+
+0) **Security**
+   - Hard stop if secrets or identifying material are present. See `spec/security.md`.
+
+1) **System Impact Classification**
+   - Classify by worst-credible failure impact using `/guides/system_impact_class.md`.
+   - Record class, worst-credible failure mode, and any Context Elevation reasoning. Class A/B without completed risk assessment is a hard stop.
+
+2) **KISS Gate**
+   - Choose the simplest robust path. For non-trivial problems, compare 2–3 viable options.
+   - Reject speculative complexity not required by the stated intent. See `/guides/architecture_principles.md`.
+
+3) **Syntax & Structure**
+   - Use current release -1 YAML/Jinja standards; reject deprecated or "also works" syntax.
+   - Apply GUI-friendly YAML, alias/description/comment rules, trigger rules, and changelog rules per `spec/yaml_style.md`.
+
+4) **DTT Probes — Mandatory Before Deployment Approval**
+   - Validate Jinja logic and entity references before deployment approval. See `/guides/dtt_first_validation.md`.
+   - If DTT passes but deployed behavior fails, switch to `/guides/systematic_debugging.md`.
+
+5) **Traces vs DTT**
+   - DTT proves template logic; Automation Traces verify orchestration/timing only when needed.
+
+6) **Live Test**
+   - Exercise a happy-path trigger when feasible. Observe Logbook only for significant events.
+
+7) **Best-in-Class Review (Intent Alignment)**
    - For all code, ask:
      1. **Primary intent?** (Lights ON = speed; Lights OFF = validation; Recovery = network efficiency; Notification = reliability)
      2. **Implementation matches intent?** (Minimize checks for ON; rich validation for OFF; sequential+guarded for recovery)
      3. **Conditions in right place?** (Cheap checks first in conditions block; expensive operations only on needed paths)
      4. **Network traffic minimized?** (Z-Wave/Zigbee sequential+delayed; HA helpers redundant-call-safe; light transitions batched)
-7) **Wait Conditions & Timeouts**
-   - Prefer `wait_template` with timeout over fixed delays when feasible.
-   - Include `continue_on_timeout: true` for graceful fallthrough.
-   - Guard exclusion lists: always check for empty string `''` in negation filters (e.g., `not in ['dead','unknown','unavailable','']`).
-8) **Restart & Recovery**
-   - Critical paths: **fixed `<10s` `for:`** on `timer.ha_startup_delay` trigger.
-   - Non‑critical: **randomized `for:` (e.g., 45–75s)** on the trigger.
-   - No artificial `delay` actions for staggering; use the trigger's `for:` instead.
-9) **Idempotency & Chatter**
-   - Guard device calls; batch by group/area; rate‑limit noisy inputs; minimal bounded retry.
-10) **Overrides & Safety**
-    - Manual/guest/safety modes always win. See `/spec/safety.md` for patterns.
-11) **Backward-Incompatible Changes (12 months)**
-    - Any refactor or enhancement MUST review the last 12 months of Home Assistant release notes and proactively adapt for **backward-incompatible (breaking) changes** affecting schemas, services, attributes, or behavior.
-    - The reviewer must confirm in their response: **"BC review: done"** or **"BC review: N/A"**.
-12) **Changelog & Versioning**
-    - Format: `YYYYMMDD-HHMM: Single sentence summary.`
-    - Timezone: **America/Los_Angeles** (local time).
-  a) **Automations & Scripts**
-    - Add **CHANGELOG** block in YAML `description:` (not YAML `#` comments).
-    - `description:` is Markdown-rendered; when using list items (`- ...`), a blank line MUST separate `CHANGELOG:` from the first item.
-  b) **YAML-defined entities (e.g., template sensors)**
-    - Use YAML `# CHANGELOG:` comments near the top of the definition.
-13) **Exceptions**
-    - Deviations allowed **only if documented inline** (in `description`, `alias`, or sensor comments).
-14) **Self‑Critique & Verdict**
-    - Pre-output sanity scan: no unresolved TODOs/placeholders, no internal contradictions, no unrequested scope expansion, no unresolved ambiguity, and no mismatch between stated intent and delivered artifact.
-    - Risks, alternatives, rollback. Verdict categories below.
-    - Assign a letter grade using the scale below. Anything below
-      A- must have fixes proposed or applied before the session ends,
-      unless the artifact is explicitly throwaway or testing scope.
-      If a fix requires a redesign out of scope for the current
-      session, document the grade and do not deploy.
+
+8) **Wait Conditions & Timeouts**
+   - Prefer `wait_template` with timeout and `continue_on_timeout: true` where feasible.
+   - Guard exclusion lists for empty string `''` (e.g., `not in ['dead','unknown','unavailable','']`).
+
+9) **Restart & Recovery**
+   - Apply `/patterns/restart_resilience.md`. Restart staggering uses trigger-level `for:` only — no action delays.
+
+10) **Idempotency & Chatter**
+    - Guard device calls; batch by group/area; rate-limit noisy inputs; minimal bounded retry.
+
+11) **Overrides & Safety**
+    - Manual/guest/safety modes always win. See `/spec/safety.md`.
+
+12) **Backward-Incompatible Changes**
+    - Review last 12 months of HA breaking changes when applicable. Response must confirm `BC review: done` or `BC review: N/A`.
+
+13) **Changelog & Versioning**
+    - Add changelog entry per `spec/yaml_style.md`.
+
+14) **Exceptions**
+    - Deviations allowed only when documented inline in the artifact.
+
+15) **Blueprint Validation (if used)**
+    - Confirm compliance with the official Home Assistant blueprint schema and validate at least one instantiated artifact against all standard automation/script expectations before approval.
+
+16) **Household UX / Annoyance Risk Review (HAF) completed**
+    - Confirm the change does not introduce new human-impact failure modes. High-impact risks must be mitigated, documented as accepted tradeoffs, or the change must not ship.
+
+17) **Self-Critique & Verdict**
+    - Confirm no TODOs/placeholders, contradictions, scope expansion, unresolved ambiguity, or intent mismatch.
+    - Document risks, alternatives, rollback, verdict, and letter grade. A- is minimum for production deployment.
 
       **Grading scale:**
       - **A** — fully Skill Pack compliant; passes all checklists; HAF
@@ -108,29 +142,23 @@ If detected:
       - **F** — hard stop; secrets present, Class A/B safety violation,
         or fundamental design failure
 
-    ## Optional Safety-Level Summary
-    When useful, summarize the highest safety level demonstrated:
+### Optional Safety-Level Summary
+When useful, summarize the highest safety level demonstrated:
 
-    - **L0 — Syntax Safe:** YAML/Jinja parses and schema shape is valid.
-    - **L1 — Type Safe:** HA state types, casts, fallbacks, and unavailable values are handled.
-    - **L2 — Behavior Safe:** DTT validation covers normal, unavailable, startup, and boundary states.
-    - **L3 — Steward Safe:** edits are surgical; entity IDs, aliases, comments, scope, and user intent are preserved.
-    - **L4 — Operator Safe:** live validation surfaces such as config check, traces, logs, or Developer Tools confirm behavior.
+- **L0 — Syntax Safe:** YAML/Jinja parses and schema shape is valid.
+- **L1 — Type Safe:** HA state types, casts, fallbacks, and unavailable values are handled.
+- **L2 — Behavior Safe:** DTT validation covers normal, unavailable, startup, and boundary states.
+- **L3 — Steward Safe:** edits are surgical; entity IDs, aliases, comments, scope, and user intent are preserved.
+- **L4 — Operator Safe:** live validation surfaces such as config check, traces, logs, or Developer Tools confirm behavior.
 
-    This summary does not replace the Skill Pack checklist, verdict, or grade.        
-        
-15) **Blueprint Validation (if used)**
-    - Confirm compliance with the official Home Assistant blueprint schema and validate at least one instantiated artifact against all standard automation/script expectations before approval.
-16) **Household UX / Annoyance Risk Review (HAF) completed**
-    - Confirm the change does not introduce new human-impact failure modes. High-impact risks must be mitigated, documented as accepted tradeoffs, or the change must not ship.
+This summary does not replace the Skill Pack checklist, verdict, or grade.
 
 ---
 
 ## A1) Hard Stop — Do Not Approve If Any Are True
 
 - [ ] DTT validation not completed before deployment
-- [ ] Entity references not confirmed via `has_value()` pre-flight
-      and defined-entity validation where required
+- [ ] Entity references not confirmed through appropriate validation: defined-entity checks where existence matters; `has_value()` where usable state matters
 - [ ] Behavior not defined in observable HA state terms
 - [ ] Restart and unavailable-entity behavior undefined
 - [ ] Manual override interactions not accounted for
@@ -145,9 +173,9 @@ If detected:
 ## C) Copy‑Paste Checklists
 ### Master
 - [ ] KISS & scope confirmed; simpler alternative considered and ruled out; no complexity added beyond current requirements
-- [ ] GUI‑friendly automation/script YAML; `alias:` confirmed at all levels; `description:` at automation/script/sensor level; `id:` per trigger
+- [ ] GUI-friendly automation/script YAML; `alias:` confirmed at schema-supported levels within automations/scripts; `description:` confirmed for automations/scripts; schema-supported naming/documentation confirmed for YAML-defined entities; `id:` per automation trigger; `alias:` confirmed absent from template sensors, input helpers, arbitrary variable mappings, and other YAML-defined entities.
 - [ ] `max_exceeded: silent` evaluated for automations that fire frequently or have significant risk of exceeding `max`
-- [ ] **Comments policy**: Automations/scripts confirmed comment-free YAML; intent in `alias:` and `description:` only. Template sensors confirmed with inline comments and commented `#debug_*` attributes. AppDaemon comments for complex logic only
+- [ ] **Comments policy**: automations/scripts confirmed comment-free — GUI strips comments silently; dependencies in `description:` if needed. Template sensors confirmed with `# CHANGELOG:` and commented `#debug_*` attributes. AppDaemon comments for complex logic only.
 - [ ] **Startup triggers** confirmed only where post-restart actions needed (state recovery, initialization); not present for passive automations
 - [ ] Brains vs muscles confirmed; scripts for fan‑outs; concurrency verified sane
 - [ ] **Construct selection confirmed:** choose used only for provably mutually exclusive branches (discriminated by trigger ID, entity state, or other HA-native discriminator); if/then/else used for prioritized execution where conditions may overlap; no elif in YAML
@@ -155,14 +183,14 @@ If detected:
 - [ ] Restart gates confirmed on triggers (`timer.ha_startup_delay` w/ appropriate `for:`); no action delays present
 - [ ] State trigger `to:`/`from:` and event trigger `event_type:` confirmed as **literal string matches only** — never Jinja; `for:` confirmed accepts Jinja where used; `platform: template` + `value_template:` used for evaluated expressions
 - [ ] Jinja safety confirmed: safe defaults present (`| float(0)`, `| int(0)`)
-- [ ] No Python methods confirmed (`.get()`, `.items()`, `.total_seconds()`, etc.)
+- [ ] Python method use reviewed: no methods on HA-returned or JSON-derived objects; `.get()` / `.items()` allowed only on known literal dicts per `snippets/jinja_patterns.md`; `.total_seconds()` avoided except for guarded `.last_changed` / `.last_updated` staleness/age semantics
 - [ ] No direct state-object access confirmed except `.last_updated` / `.last_changed` for staleness/age; guarded and used only for time semantics
 - [ ] String normalization confirmed: `| lower | trim`
-- [ ] Time math confirmed: `as_timestamp()` not `.total_seconds()`
+- [ ] Time math confirmed: `as_timestamp()` preferred for timestamp math; `.total_seconds()` used only for guarded `.last_changed` / `.last_updated` staleness/age semantics where explicitly allowed
 - [ ] Deferred-intent datetime helpers confirmed canonical pattern (full datetime, sentinel `2999-01-01 00:00:00`, no null/blank, literal sentinel comparison)
   - Does NOT apply to non-deferred timestamps (e.g., chatter-control like "last applied", "last run")
 - [ ] Type safety confirmed: raw/typed variables separated; comparisons use typed with tolerance
-- [ ] Availability confirmed: `has_value()` used for entity checks (1)
+- [ ] Availability/existence confirmed: defined-entity validation used where existence matters; `has_value()` used where usable state matters; blank-string guard added for sources known to emit blanks (1)
 - [ ] Event-driven confirmed preferred; polling ≥60s and justified where used
 - [ ] Fast-fail condition ordering confirmed: cheap checks first; likely failures early; expensive Jinja last
 - [ ] Chatter confirmed minimized; idempotent guards present; groups/areas used; rate‑limit applied as needed
@@ -171,7 +199,7 @@ If detected:
 - [ ] Best-in-class review completed: intent clarity, implementation alignment, condition placement, network efficiency confirmed
 - [ ] Wait strategies confirmed: `wait_template` used where applicable; exclusion lists guard empty string; `continue_on_timeout: true` present
 - [ ] Backward-incompatible changes (12 months) reviewed and confirmed
-- [ ] Exceptions documented inline (description/alias/comments)
+- [ ] Exceptions documented inline using the artifact's supported documentation channel (`description:`/`alias:` for automations/scripts; comments for YAML-defined entities); no explicit entity IDs or helper names introduced in descriptions or changelogs
 - [ ] Risks/alternatives/rollback documented; letter grade assigned; verdict chosen
 - [ ] Household UX / Annoyance Risk Review (HAF) completed (see sub-checklist)
 
@@ -183,14 +211,16 @@ If detected:
 - [ ] Deferred-intent datetime helpers (deadline-style `input_datetime`) declare owner and overdue policy in `description:` and implement explicit consume behavior (clear or re-arm)
 - [ ] No device calls inside loops without guards
 - [ ] No recursive loop: if trigger entity == action target entity, a `to:` constraint and re-entry condition are mandatory
-- [ ] No logging; description/alias carry intent only
-- [ ] Trigger coverage: each trigger ID referenced exactly once; else: branch logs trigger.id for catch-all validation
+- [ ] Logging absent unless documenting significant failure or diagnostic paths; description/alias carry normal intent
+- [ ] Trigger coverage: each trigger ID or intentionally collapsed trigger group is handled by exactly one evaluation path; catch-all branches log `trigger.id` only for significant diagnostic validation
 - [ ] Empty `metadata: {}`/`data: {}` blocks: acceptable if GUI-edited (editor auto-adds); remove only in pure-YAML workflows
 - [ ] Automation/script CHANGELOG formatting correct:
+  - newest entry first
   - two blank lines before **CHANGELOG:**
   - `**CHANGELOG:**` (bold + caps)
   - one blank line after header
   - one blank line between each entry
+- [ ] `description:` prose paragraphs are single unbroken lines — no internal wrapping; line breaks only between paragraphs and within CHANGELOG block
 
 ### Script Sub‑Checklist
 - [ ] `mode` and `max` reflect expected concurrency
@@ -201,8 +231,7 @@ If detected:
 ### Template Sensor Sub‑Checklist
 - [ ] Minimal trigger set + HA startup gate
 - [ ] Clear directive state + `reason` attribute
-- [ ] Safe reads; expected commented `#debug_…` attributes present
-- [ ] Optional `# deps:` and `# verified:` documentation for clarity
+- [ ] Safe reads; expected commented `#debug_*` attributes present
 - [ ] Accumulating dict-merge sensors: byte-length pre-check before commit (`proposed | tojson | length > 16384`)
 
 ### Time Math & Timezone Safety Sub-Checklist

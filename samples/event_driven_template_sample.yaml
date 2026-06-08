@@ -22,7 +22,7 @@
 #       3) rgb_color derived from kelvin via a lookup
 #
 # CHANGELOG:
-# - 20260115-1145: Simplified canonical sample (3 item shapes). YAML syntax current as of 2026.1.x.
+# - 20260115-1145: Simplified canonical sample (3 item shapes).
 # - 20260102-1200: Canonicalized header + organization guidance + JSON items contract.
 # - 20251019-0900: Initial example.
 ################################################################################

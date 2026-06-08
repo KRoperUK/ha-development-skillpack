@@ -1,0 +1,78 @@
+alias: "Directive: Respect Degradation"
+description: >
+  Executes a critical action only when data quality permits, with per-tier routing and manual override escape hatch. Non-action paths stop explicitly for trace visibility. Depends on companion template sensor: template_sensor_with_integration_degradation.yaml (sensor.directive_with_degradation).
+
+
+  **CHANGELOG:**
+
+  - 20260607-1200: Split from combined file into standalone automation artifact. Replaced invalid elif chain with if/then/else + choose; manual override is policy gate, remaining branches route by data quality state (mutually exclusive). Fixed description formatting.
+
+  - 20260102-1200: Canonical example for graceful integration degradation.
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - alias: "Directive changed"
+    id: directive_changed
+    trigger: state
+    entity_id: sensor.directive_with_degradation
+
+actions:
+  - alias: "Read directive facts once"
+    variables:
+      directive_state: "{{ states('sensor.directive_with_degradation') }}"
+      dq: "{{ state_attr('sensor.directive_with_degradation', 'data_quality') | default('none', true) }}"
+      tier: "{{ state_attr('sensor.directive_with_degradation', 'active_tier') }}"
+      reasoning: "{{ state_attr('sensor.directive_with_degradation', 'reasoning') }}"
+
+  - alias: "Manual override gate (policy — evaluated before all routing)"
+    if:
+      - alias: "Manual override ON"
+        condition: state
+        entity_id: input_boolean.manual_override
+        state: "on"
+    then:
+      - alias: "Manual override: execute full action"
+        action: script.turn_on
+        target:
+          entity_id: script.some_critical_action
+
+    else:
+      - alias: "Route by data quality (mutually exclusive)"
+        choose:
+          - alias: "Primary operational – execute full action"
+            conditions:
+              - condition: template
+                value_template: >
+                  {{ directive_state == 'ready'
+                     and dq == 'fully_operational' }}
+            sequence:
+              - alias: "Execute full action"
+                action: script.turn_on
+                target:
+                  entity_id: script.some_critical_action
+
+          - alias: "Degraded – proxy witness active"
+            conditions:
+              - condition: template
+                value_template: >
+                  {{ directive_state == 'degraded'
+                     and dq == 'degraded_using_proxy_witness' }}
+            sequence:
+              - alias: "Proxy witness active – stop"
+                stop: "Sample: reduced/skipped action (could call script/notify/etc.)"
+
+          - alias: "Degraded – primary stale, no proxy"
+            conditions:
+              - condition: template
+                value_template: >
+                  {{ directive_state == 'degraded'
+                     and dq == 'primary_present_but_stale' }}
+            sequence:
+              - alias: "Primary stale – stop"
+                stop: "Primary stale and no proxy"
+
+        default:
+          - alias: "No reliable directive – stop"
+            stop: "No reliable data"

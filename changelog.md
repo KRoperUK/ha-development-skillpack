@@ -1,4 +1,10 @@
 ## Changelog
+## 1.0.0 - 20260607
+- Scaffold and sample corrections: fixed invalid YAML `elif` throughout; split mixed template+automation files into companion pairs; corrected `variables:` placement, canonical startup trigger doctrine, and restart recovery mode across all artifacts; removed GUI-fragile inline comments.
+- `snippets/jinja_patterns.md`: fixed unsafe `from_json | default()` pipe pattern; use `from_json(default=...)`.
+- `SKILL.md` rebuilt as dispatcher: added Artifact Map, strengthened samples/scaffolds authority hierarchy, renamed "Core HA rules" to "Core Skill Pack rules", narrowed BC review scope, added Compatibility forward-reference.
+- Consolidated YAML authoring into `spec/yaml_style.md`; hardened review governance, Jinja standards, and architecture guidance; replaced `HOWTO.md` with `glossary.md`.
+- Updated security guidance for narrow operational-identifier exceptions where no secrets mechanism exists.
 ## 0.7.4
 - Added spec/zwave_js.md - Z-Wave JS Central Scene authoring guidance for exact device triggers, raw event routing, and the `value`/`value_raw` mismatch footgun.
 - Added guides/cloud_api_actuation.md — defensive actuation pattern for cloud-backed entities covering confirm-retry-notify, recovery trigger, branch gate expansion, sustained unavailability hold, and complete trigger set reference.

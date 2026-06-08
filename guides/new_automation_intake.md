@@ -221,11 +221,9 @@ implemented and validated under Skill Pack standards.
 
 #### Step 7 — DTT-First Validation
 
-Before writing any YAML, validate all Jinja logic and entity
-references in Developer Tools → Templates. See
-`guides/dtt_first_validation.md` for the full validation cycle.
+No Jinja-bearing or entity-dependent artifact may be approved for deployment until DTT/entity validation is complete. Draft YAML and patch review may occur before DTT when the artifact is explicitly marked not deployment-ready.
 
-No implementation YAML until DTT validation passes.
+See `guides/dtt_first_validation.md` for the full validation cycle.
 
 ---
 

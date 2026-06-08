@@ -1,0 +1,190 @@
+################################################################################
+# EXAMPLE AREA LIGHTING TARGETS – TEMPLATE SENSOR (CANONICAL)
+#
+# COMPANION: This template sensor is consumed by the companion automation
+# in presence_driven_lighting_automation.yaml. Both files must be present.
+#
+# ORGANIZATION: This example uses a `template:` block. Whether you need it depends
+# on your include context:
+#   * If configuration.yaml has `template: !include templates.yaml`, then templates.yaml
+#     should NOT have `template:` (it should be the list items directly).
+#   * If you include a full file/package that defines top-level keys, it MUST include
+#     `template:` as a top-level key.
+# See your configuration includes to determine which applies.
+#
+# PURPOSE:
+#   Computes desired lighting targets (0–100%) for an example area based on:
+#   - Indoor lux (room illuminance)
+#   - Outdoor irradiance (solar intensity)
+#   - Time-of-day bands (evening vs dark hours vs daytime)
+#   - Optional sub-area presence (e.g., table present boosts a main light)
+#
+# DESIGN NOTES:
+#   - Single-read variables for inputs; derive everything from those.
+#   - Tiering is inside the computation (no availability gating).
+#   - No republishing raw upstream facts as attrs (no irradiance/lux attrs).
+#   - Debug attrs are present but commented out.
+#
+# CHANGELOG:
+# - 20260607-1200: Split from combined file into standalone template sensor artifact.
+#   Removed companion automation; see presence_driven_lighting_automation.yaml.
+#   Moved variables: block to trigger-block level (sibling of triggers: and sensor:).
+#   Added startup delay timer trigger so sensor recomputes before automation apply gate fires.
+# - 20260102-1200: Canonical example with generic entities, single-read vars, JSON items
+#   output, stable reason attribute.
+# - 20251019-1400: Initial example.
+################################################################################
+
+template:
+  - triggers:
+      - trigger: state
+        entity_id:
+          - sensor.example_outdoor_irradiance
+          - sensor.example_room_lux
+          - binary_sensor.example_area_sub_presence
+      - trigger: time_pattern
+        minutes: "/15"
+      - trigger: state
+        entity_id: timer.ha_startup_delay
+        from: active
+        to: idle
+        for:
+          seconds: "{{ range(45, 76) | random }}"
+
+    variables:
+      # --- Time bands (examples; adjust to taste) ---
+      now_minutes: "{{ (now().hour * 60) + now().minute }}"
+      is_evening: "{{ 1080 <= now_minutes < 1320 }}"         # 18:00–22:00
+      is_dark_hours: "{{ now_minutes >= 1350 or now_minutes < 360 }}"  # 22:30–06:00
+
+      # --- Inputs (safe defaults; treat unavailable as 0) ---
+      irradiance_ok: "{{ has_value('sensor.example_outdoor_irradiance') }}"
+      lux_ok: "{{ has_value('sensor.example_room_lux') }}"
+
+      irradiance_raw: "{{ states('sensor.example_outdoor_irradiance') | float(0) }}"
+      lux_raw: "{{ states('sensor.example_room_lux') | float(0) }}"
+
+      irradiance: "{{ irradiance_raw if (irradiance_ok and 0 <= irradiance_raw <= 2000) else 0 }}"
+      lux: "{{ lux_raw if (lux_ok and 0 <= lux_raw <= 200000) else 0 }}"
+
+      sub_area_present: "{{ is_state('binary_sensor.example_area_sub_presence', 'on') }}"
+
+      # --- Irradiance binning (coarse curves) ---
+      irr_bin: >
+        {% if irradiance < 20 %}very_low
+        {% elif irradiance < 50 %}low
+        {% elif irradiance < 150 %}low_mid
+        {% elif irradiance < 300 %}mid
+        {% else %}high
+        {% endif %}
+
+      # --- Desired lux targets (simple example) ---
+      target_lux_main: "{{ 30 if irr_bin == 'very_low' else 45 if irr_bin in ['low','low_mid'] else 60 }}"
+      target_lux_accent: 20
+
+      # --- Base brightness (percent) by irradiance bin ---
+      base_main_pct: >
+        {% if irr_bin == 'very_low' %}40
+        {% elif irr_bin == 'low' %}25
+        {% elif irr_bin == 'low_mid' %}15
+        {% elif irr_bin == 'mid' %}10
+        {% else %}0
+        {% endif %}
+
+      base_accent_pct: >
+        {% if irr_bin == 'very_low' %}5
+        {% elif irr_bin == 'low' %}3
+        {% elif irr_bin == 'low_mid' %}2
+        {% elif irr_bin == 'mid' %}1
+        {% else %}0
+        {% endif %}
+
+      # --- Delta-driven adjustment (very simple) ---
+      delta_main: "{{ (target_lux_main - lux) | int(0) }}"
+      delta_accent: "{{ (target_lux_accent - lux) | int(0) }}"
+
+      adj_main_pct: "{{ ((delta_main // 10) * 3) | int(0) }}"
+      adj_accent_pct: "{{ ((delta_accent // 15) * 1) | int(0) }}"
+
+      sub_boost_main_pct: "{{ 25 if sub_area_present else 0 }}"
+
+      # --- Calculated (pre-clamp) ---
+      main_calc_pct: >
+        {% if is_evening %}40
+        {% elif is_dark_hours %}5
+        {% else %}
+          {{ (base_main_pct | int(0)) + (adj_main_pct | int(0)) + (sub_boost_main_pct | int(0)) }}
+        {% endif %}
+
+      accent_calc_pct: >
+        {% if is_evening %}15
+        {% elif is_dark_hours %}0
+        {% else %}
+          {{ (base_accent_pct | int(0)) + (adj_accent_pct | int(0)) }}
+        {% endif %}
+
+      # --- Clamp + minimum threshold ---
+      main_raw: "{{ main_calc_pct | int(0) }}"
+      accent_raw: "{{ accent_calc_pct | int(0) }}"
+
+      main_pct: >
+        {% set v = 0 if main_raw < 3 else main_raw %}
+        {{ [100, [0, v] | max] | min }}
+
+      accent_pct: >
+        {% set v = 0 if accent_raw < 3 else accent_raw %}
+        {{ [100, [0, v] | max] | min }}
+
+      has_targets: "{{ (main_pct | int(0)) > 0 or (accent_pct | int(0)) > 0 }}"
+
+      # --- Light list (no .items()) ---
+      targets_list:
+        - light: light.example_area_main_light
+          brightness_pct: "{{ main_pct | int(0) }}"
+        - light: light.example_area_accent_light
+          brightness_pct: "{{ accent_pct | int(0) }}"
+
+      state_v: "{{ 'on' if has_targets else 'off' }}"
+
+      reason_v: >
+        {% if state_v == 'off' %}
+          No targets (all computed brightness below threshold)
+        {% elif is_dark_hours %}
+          Dark hours targets applied
+        {% elif is_evening %}
+          Evening targets applied
+        {% elif irr_bin in ['very_low','low'] %}
+          Low irradiance targets applied
+        {% else %}
+          Daytime targets applied
+        {% endif %}
+
+    sensor:
+      - name: "Example Area Lighting Targets"
+        unique_id: example_area_lighting_targets
+
+        state: "{{ state_v }}"
+
+        attributes:
+          reason: "{{ reason_v }}"
+          has_targets: "{{ has_targets }}"
+
+          items_json: >
+            {{ targets_list | tojson }}
+
+          unavailable_entities: >
+            {% set ns = namespace(u=[]) %}
+            {% for it in targets_list %}
+              {% set eid = it.light %}
+              {% set st = states(eid) %}
+              {% if st in ['unknown','unavailable','none',''] %}
+                {% set ns.u = ns.u + [eid] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.u }}
+
+          # debug_irr_bin: "{{ irr_bin }}"
+          # debug_is_evening: "{{ is_evening }}"
+          # debug_is_dark_hours: "{{ is_dark_hours }}"
+          # debug_main_pct: "{{ main_pct }}"
+          # debug_accent_pct: "{{ accent_pct }}"

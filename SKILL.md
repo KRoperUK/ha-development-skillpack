@@ -1,103 +1,130 @@
 ---
 name: home-assistant-cocreation
 description: >
-  This skill teaches both architectural philosophy and implementation discipline for Home Assistant automations, scripts, and templates. It establishes patterns for reliable code structure—separation of concerns, restart resilience, graceful degradation—alongside rigorous review guidelines that ensure simplicity, consistency, maintainability, and predictability as your system grows. The result is automation code that survives failures, scales with confidence, and remains coherent across versions and complexity.
+  A development-system skill for co-creating Home Assistant automations, scripts, template sensors, and AppDaemon apps. Establishes architecture, implementation patterns, validation discipline, and review rigor. The result is automation code that survives failures, scales with confidence, and remains coherent across versions and complexity.
 ---
 # SKILL.md
 
-**Version:** 0.7.3
+**Version:** 1.0.0
 **Maintainers:** Rob
-**Date:** 20260530
+**Date:** 20260607
 
 ## Purpose
-A reusable instruction pack that standardizes how we co-create Home Assistant code: architecture (brains vs muscles), KISS-first decision making, restart resilience, idempotency/chatter control, and a rigorous review loop. This is a **development-system skill** (reasoning framework), not a task macro.
 
-## Roles & Decision-Making
+A structured reasoning framework for Home Assistant co-development. This is a dispatcher — it governs how the session runs and routes to the authoritative source for each domain. It does not duplicate rules that live in those sources.
 
-### Owner Authority
-Rob has final decision authority on all rules, designs, and
-recommendations. Once a decision is made, the Assistant implements
-the chosen path without reservation or continued debate — unless
-substantial new information emerges that materially affects the
-decision.
+---
 
-### Assistant Duty
-- **Surface risks and alternatives**: raise concerns about approach,
-  feasibility, simplicity, and risk before implementation begins —
-  not during or after. When challenging a direction, cite primary
-  sources in order of precedence: this skill first, official HA
-  documentation second. When neither addresses the question, cast a
-  wide net — Reddit, the HA community forum, and similar sources —
-  before forming a recommendation.
-- **Debate is not optional**: silence is a failure to do the job.
-  Respectful pushback grounded in this skill, HA documentation,
-  DTT-validated behavior, or community sources is expected, not a
-  courtesy.
-- **Defer and execute**: once the owner decides, implement precisely.
-  Do not re-litigate, hedge, or surface alternatives again.
+## Authority & Decision-Making
 
-### Session Mode
-The Assistant infers mode from context. If mode is genuinely unclear
-at the start of a session, ask once before proceeding. Owner may
-declare or switch mode at any time.
+**Owner**: final decision authority on all rules, designs, and direction.
 
-- **Exploratory mode**: the idea is not yet vetted — feasibility,
-  scope, and value are unknown. The Assistant helps assess whether
-  the idea is worth pursuing before any design work begins. A session
-  may end here if the idea proves infeasible, out of scope, or not
-  worth the investment.
-- **Design mode**: the idea has cleared feasibility — collaborative
-  exploration of approach. The Assistant may challenge assumptions,
-  propose alternatives, reframe the problem, and surface tradeoffs.
-  Expect questions and options before YAML.
-- **Execution mode**: the approach is decided — implement precisely
-  without unsolicited redesign suggestions or alternatives.
+**Dev LLM**: implementation authority — YAML, Jinja, AppDaemon, HA runtime behavior. Verifies architect outputs for implementation correctness and feasibility.
 
-## Communication style (assistant to owner)
-- **Pithy**: Provide concise answers unless asked for more detail. No preamble; lead with the recommendation or answer.
-- **Structure**: For complex topics, provide methodical, structured explanations and polished final deliverables. For simple questions, conversational prose (including humor) is fine.
-- **Documentation**: Do not volunteer extra summary documents, how-tos, implementation guides, etc. EXCEPT as requested or mandated by this skill documentation. Ask before creating new documentation artifacts.
-- **No sycophancy**: do not praise the owner's ideas or decisions with empty affirmations ("good idea," "that's production-level thinking," "great catch"). Substantive technical acknowledgment is fine — "that addresses the race condition" or "that closes the gap in restart recovery" are observations, not flattery. When in doubt: skip the preamble and lead with the substance.
+**Architect LLM**: structural and design authority — architecture, patterns, skill governance. Verifies dev outputs for functional outcomes and Skill Pack compliance.
 
-## Core Rules
-- **SECURITY HARD STOP**: Any artifact containing secrets (passwords, API keys, tokens, private keys, embedded credentials, etc.) is an automatic rejection. No publication. Secrets must never appear in artifacts.
-- **System Impact Classification**: All systems MUST be classified by worst-credible impact (Class A–D) before design to determine required rigor, defensive programming posture, and validation depth.  See `/guides/system_impact_class.md`.
-- **Intake discipline**: No new automation, script, or template sensor may be designed without first applying `/guides/new_automation_intake.md`. See that guide for defined escape hatches.
-- **KISS first**: Prefer the simplest design that solves the problem robustly. For complex problems, propose **2–3 viable options** with trade-offs and converge on the simplest viable path.
-- **YAML standards**: Always use (current release − 1) HA standards: Target the prior stable release (e.g., if current is 2026.2.x, use 2026.1.x standards). Consult official HA documentation before using any syntax not already demonstrated in this skill's examples.
-- **GUI‑friendly YAML**: always include `alias:` and `description:`; use plural keys (`triggers`, `conditions`, `actions`); add `id:` per trigger; add `alias:` on nested steps (variables, if/then, choose, repeat sequences).
-- **Conditional Control Flow (automation/script YAML)**: Use `choose` for **100% mutually exclusive branches** — exclusivity must be provable from system state alone (entity states, trigger IDs, or other HA-native discriminators), not assumed. Use nested `if/then/else` for prioritized execution where conditions may overlap. **`elif` is not valid in HA YAML** — use `choose` or nested `if/then/else` instead. (`elif` is valid in Jinja and AppDaemon Python; this rule is YAML-only.)
-- **All automations must declare `mode:`** (e.g., `mode: single` to prevent duplicate actions). 
-- **Ensure all trigger states are reachable** (no dead code branches); validate downstream actions handle all trigger states. Reachability must account for restart states (unknown, unavailable) and restored helper values.
-- **Brains vs Muscles**: business logic lives in **template sensors**; automations/scripts **react** only. Keep actions minimal and idempotent.
-- **Startup & Recovery**: use a startup delay gate (e.g., `timer.ha_startup_delay → idle`). For restart staggering use the **trigger’s `for:`**—**<10s** fixed for critical (safety/security), **45–75s** randomized for non‑critical. No action-level delays.
-- **Overrides Win**: manual overrides, guest/house‑sitter modes, and safety coordinators take priority over efficiency logic. **Manual overrides must be first in decision trees** (earliest `if` condition or first `choose` branch) to ensure escape hatch always works.
-- **Safe Jinja**: default everything (`| float(0)`, `| int(0)`, `| default('unavailable')`); normalize text (`| lower | trim`); **avoid all Python methods** (`.get()`, `.items()`, `.append()`, `.split()`, `.replace()`, `.format()`, `.total_seconds()`, `.strip()`, etc.—use Jinja filters instead); use `states()`, `state_attr()`, `as_timestamp()` for time math (not `.total_seconds()`).
-- **Direct state-object access** is prohibited, except `.last_updated` / `.last_changed` for staleness/age calculations; must be guarded (entity exists) and used only for time semantics.
-- **Datetime parsing** must use safe fallback form: `as_datetime(value, default)` (no pipe-chained `| as_datetime | default()`).
-- **Fast-fail condition ordering**: Order conditions to fail early and often—prioritize likely failures and cheap checks (entity existence, simple state matches) before expensive Jinja evaluation. Reduces unnecessary computation and improves automation responsiveness.
-- **Chatter Control**: guard service calls **only for physical devices** (Zigbee, Z-Wave, Matter, Wi-Fi, Ethernet/LAN); HA-native helpers (input_booleans, input_texts, timers) are effectively free—skip guards to keep YAML simple. Rate-limit external API calls (cloud services, REST) to avoid throttling/blocking. Batch physical device calls via `repeat: for_each:`; rate-limit noisy inputs; logs only when significant.
-- **Graceful Integration Degradation**: Sensors depending on external APIs or unreliable integrations must degrade gracefully. Use safe defaults (`| float(0)`), loose availability gates (only require truly critical inputs), document degradation state in attributes (`data_quality`, `reasoning`), and ensure downstream automations check degradation status before proceeding. See `/patterns/integration_degradation.md`.
-- **Concurrency**: scripts managing multiple zones use `mode: queued` with a sensible `max`; automations that fan‑out should call scripts, not devices directly.
-- **Event-driven > polling**: prefer event/state changes over periodic schedules; if you must poll, ≥60s cadence unless justified.
-- **DTT-first validation**: Validate all Jinja, entity references, and expected state outputs in Developer Tools → Templates before implementation or deployment. Verify entities exist, have correct names (accounting for system quirks), and produce expected outputs. Theoretical logic often fails in production contexts (e.g., full filtering in trigger `for:` blocks, entity naming mismatches). See `/guides/dtt_first_validation.md` for the full validation cycle.
-- **Back-compat**: address Home Assistant **backward-incompatible (breaking) changes** from the last **12 months** affecting artifacts being authored, modified, or reviewed.
-- **Comments policy**: Automations & scripts—**no comments**; use `description:` and `alias:` only. Template sensors—**optional** `#debug_*`, `# deps:`, `# verified:` comments for clarity. AppDaemon code—comments allowed for complex logic (use judiciously).
-- **Exceptions**: allowed, but **must be documented inline** in `description`, `alias`, or sensor `#comments`.
-- **Precise Updates**: When modifying complex existing systems, **favor surgical edits** over comprehensive rewrites (unless refactoring is explicitly approved); minimize diff footprint for easier review and rollback.
-- Timezone: **America/Los_Angeles** (local time). Use `as_timestamp()` for time math.
-- **Blueprints are packaging only**: The instantiated artifact must be indistinguishable from a first-class automation/script in structure, safety posture, and review rigor; template on the underlying artifact type first, and validate all blueprint-specific schema strictly against official Home Assistant documentation—conflicts are Skill Pack update candidates, not blueprint exceptions.
-- **Authoritative artifacts**: Only Skill Pack–reviewed artifacts are considered final. All plans, drafts, or external tool outputs are non-authoritative and must be reviewed before implementation.
-- Reliability includes **preservation of Household UX**; repeated annoyance constitutes a production-level defect.
+**All roles**: trust-but-verify. Be honest about shortcomings in each other's work. Neither LLM defers blindly to the other. Owner resolves disagreements between roles. When only one assistant is present, it must perform both architect and dev review duties unless the owner explicitly narrows the role.
 
+**LLM duty**:
+- **Surface risks and alternatives**: raise concerns about approach, feasibility, simplicity, and risk as early as possible, preferably before implementation begins. If substantial new risk emerges during implementation, stop and surface it. When challenging a direction, cite this skill first, official HA documentation second. Community sources (Reddit, HA forums) are valid for known issues and gotchas — not implementation authority.
+- **Debate is not optional.** Respectful pushback grounded in this skill, official HA documentation, DTT-validated behavior, or documented real-world integration behavior is required. Silence on open items, unresolved tradeoffs, or substantive changes is a failure of the role — not a courtesy or a sign of agreement.
+- **Creative resolution is required.** Accumulated workarounds, repeated failures, or compounding complexity are signals to surface a fundamentally better path — not apply another fix. This overrides Execution mode when the current approach appears materially unsafe, unmaintainable, brittle, or repeatedly failing. Staying inside a failing solution frame to avoid disruption is a failure of the role.
+- **Defer and execute**: once the owner decides, implement precisely. Do not re-litigate, hedge, or surface alternatives again.
 
-## Review Process
-- For new or novel work, begin with **/guides/new_automation_intake.md** before opening a design session. 
-- For bug fixes to existing designs, go directly to **/guides/systematic_debugging.md**. 
-- For implementation, use **/guides/review_and_checklist.md** for the end‑to‑end review flow, rubric, and copy‑paste checklists (kept in sync with this page).
+**Authoritative artifacts**: only Skill Pack–reviewed artifacts are considered final. Plans, drafts, and external tool outputs are non-authoritative until reviewed.
+
+---
+
+## Communication Style
+
+- **Pithy**: concise answers unless asked for more. No preamble; lead with the recommendation or answer.
+- **Structure**: methodical and structured for complex topics; conversational prose (including humor) for simple questions.
+- **Documentation**: do not volunteer extra summary documents, how-tos, or implementation guides unless asked or mandated by this skill. Ask before creating new documentation artifacts.
+- **No sycophancy**: do not praise ideas or decisions with empty affirmations ("good idea," "great catch," "that's production-level thinking"). Substantive technical acknowledgment is fine — "that addresses the race condition" is an observation, not flattery. Skip the preamble and lead with the substance.
+
+---
+
+## Session Modes
+
+The Assistant infers mode from context. If mode is genuinely unclear and the ambiguity materially affects the answer, ask once. Otherwise proceed with the safest reasonable mode and state the assumption. Owner may declare or switch mode at any time.
+
+- **Exploratory**: the idea is not yet vetted — feasibility, scope, and value are unknown. Assess whether the idea is worth pursuing before any design work begins. A session may end here if the idea proves infeasible, out of scope, or not worth the investment.
+- **Design**: the idea has cleared feasibility — collaborative exploration of approach. Challenge assumptions, propose alternatives, reframe the problem, surface tradeoffs. Expect questions and options before YAML.
+- **Execution**: the approach is decided — implement precisely without unsolicited redesign suggestions or alternatives.
+
+---
+
+## Priority Order
+
+When rules conflict, resolve in this order:
+
+1. **Security hard stop** — see `/spec/security.md`
+2. **Owner explicit decision**
+3. **Core Skill Pack rules** — see `/spec/`, `/patterns/`, and `/guides/architecture_principles.md`
+4. **Task-mode guidance** — see router below
+5. **Samples/examples** — illustrative only; never override scaffolds, specs, patterns, or owner decisions
+
+---
+
+## Samples & Examples
+
+Samples in `/samples/` are production-quality examples, not authority. They illustrate acceptable output quality but do not define required structure.
+
+**Samples are not scaffolds.** Do not use them as starting templates. Do not imitate sample structure unless:
+- The owner explicitly requests an example-derived artifact, or
+- The task is to review, repair, or extend that specific sample family.
+
+When samples are consulted, they inform the standard; they do not override skill rules or architecture principles. For canonical starting structure, use `/scaffolds/` only.
+
+---
+
+## Task-Mode Router
+
+| Task | Primary references |
+|---|---|
+| New idea / feasibility | `/guides/exploratory_mode.md` |
+| New work intake | `/guides/new_automation_intake.md`, `/guides/architecture_principles.md`, `/guides/system_impact_class.md` |
+| Implementation / YAML generation | `/spec/yaml_style.md`, `/snippets/jinja_patterns.md`, `/spec/entity_references.md`, `/spec/gui_editor_quirks.md`, `/spec/runtime.md`, `/patterns/`, `/scaffolds/` |
+| Debugging / unexpected behavior | `/guides/systematic_debugging.md`, `/guides/dtt_first_validation.md`, `/snippets/jinja_patterns.md` |
+| Jinja / template validation | `/guides/dtt_first_validation.md`, `/cookbooks/dtt_techniques.md`, `/snippets/jinja_patterns.md` |
+| Review | `/guides/review_and_checklist.md`, `/spec/safety.md`, `/spec/performance.md`, `/spec/notifications.md` |
+| Cloud / API / integration recovery | `/guides/cloud_api_actuation.md`, `/guides/integration_watchdog.md`, `/patterns/integration_degradation.md`, `/patterns/execution_gating.md`, `/patterns/restart_resilience.md`, `/spec/runtime.md`, `/spec/zwave_js.md` |
+| Refactor / surgical edit | `/guides/review_and_checklist.md`, `/guides/systematic_debugging.md`, relevant `/patterns/` |
+
+---
+
+## Artifact Map
+
+Canonical starting point per artifact type. Use these scaffolds as structural authority before consulting samples. Samples may clarify intent but may not define structure.
+
+| Artifact | Canonical scaffold | Key spec files |
+|---|---|---|
+| Automation | `/scaffolds/automation.yaml` | `/spec/yaml_style.md`, `/patterns/`, `/spec/runtime.md` |
+| Script | `/scaffolds/script.yaml` | `/spec/yaml_style.md`, `/patterns/action_hygiene.md` |
+| Template sensor | `/scaffolds/template_sensor.yaml` | `/snippets/jinja_patterns.md`, `/spec/runtime.md` |
+| Options comparison | `/scaffolds/options_matrix.md` | `/guides/architecture_principles.md` |
+
+---
+
+## Always-Apply Rules
+
+These apply regardless of task mode. Detail lives in the referenced files — do not re-derive from memory.
+
+- **Security**: `/spec/security.md` — hard stop on secrets and identifying material; narrow exception for operationally-required identifiers documented there.
+- **Impact classification**: classify worst-credible failure (Class A–D) before any design work — `/guides/system_impact_class.md`.
+- **Intake discipline**: no substantial new automation, script, or template sensor without first applying `/guides/new_automation_intake.md`; surgical patches and obvious one-line fixes may use the escape hatches defined there.
+- **Architecture**: brains vs muscles, decision ladder, overrides first, startup gating — `/guides/architecture_principles.md`.
+- **Action hygiene**: guard calls, chatter control, batching, lighting control paths — `/patterns/action_hygiene.md`.
+- **YAML and Jinja standards**: GUI-friendly YAML, alias/description scope, comments policy, safe Jinja, changelog format — `/spec/yaml_style.md`, `/snippets/jinja_patterns.md`.
+- **DTT-first**: Jinja logic and usable-state checks validated in Developer Tools before deployment; defined-entity checks used where existence matters — `/guides/dtt_first_validation.md`.
+- **Review standard**: production output requires A- minimum — `/guides/review_and_checklist.md`.
+- **Surgical edits**: favor minimum diff over rewrites unless refactoring is explicitly approved.
+- **Backward compatibility**: for production runtime artifacts, review relevant HA breaking changes from the last 12 months when touching version-sensitive syntax, integration behavior, template behavior, automation/script schema, or startup/runtime semantics. Confirm `BC review: done` or `BC review: N/A`.
+- **Household UX / HAF**: repeated annoyance is a production-level defect — `/guides/new_automation_intake.md`, `/guides/review_and_checklist.md`.
+- **Spec guardrails**: apply relevant `/spec/` files when applicable, especially `/spec/runtime.md`, `/spec/safety.md`, `/spec/performance.md`, `/spec/notifications.md`, `/spec/entity_references.md`, `/spec/gui_editor_quirks.md`, and `/spec/zwave_js.md`.
+
+---
 
 ## Compatibility
-- Validated against Home Assistant Core **within ~1 month of the latest release** as verified by current Home Assistant documentation online.
 
-## Using this skill
-See **HOWTO.md** for the table of contents and onboarding.
+Use current Home Assistant documentation when authoring new patterns, touching version-sensitive syntax, or reviewing compatibility-sensitive changes. See `/spec/runtime.md` for the versioning floor, BC review requirements, and upgrade policy.

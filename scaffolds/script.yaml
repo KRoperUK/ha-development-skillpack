@@ -1,7 +1,9 @@
 alias: Script – Idempotent Light Turn-On Wrapper
 description: >
   Centralized light action executor with an idempotency guard to minimize chatter.
+
   Queued mode reduces concurrent writes to the same entity.
+
   Guard compares desired vs actual state/brightness and skips if already correct.
 
 
@@ -9,7 +11,7 @@ description: >
 
   - 20260126-1430: Canonicalized.
 
-  - 20260102-1200: Initial version/
+  - 20260102-1200: Initial version.
 
 mode: queued
 max: 10
@@ -72,4 +74,3 @@ sequence:
     data:
       brightness_pct: "{{ brightness_pct_safe }}"
       transition: "{{ transition_safe }}"
-    continue_on_error: true

@@ -2,13 +2,14 @@
 
 **Source:** Adapted from Superpowers `test-driven-development` skill
 (obra/superpowers, MIT License, Jesse Vincent / Prime Radiant, v5.0.7)
-**Skill Pack Version:** 0.7.0
 
 ## Purpose
 
-State expected behavior explicitly before wiring anything. Validate
+State expected behavior explicitly before deployment approval. Validate
 logic in Developer Tools → Templates before deployment. Confirm
 orchestration separately with Automation Traces.
+
+No Jinja-bearing or entity-dependent artifact may be approved for deployment until DTT/entity validation is complete. Draft YAML and patch review may occur before DTT when the artifact is explicitly marked not deployment-ready.
 
 **Core principle:** Unvalidated logic is unfinished work, regardless
 of how confident the implementation looks.
@@ -161,9 +162,7 @@ Before any logic-bearing artifact is considered ready for deployment:
       ambiguity or debug failures
 - [ ] Validated against meaningful state, including unavailability
       and startup conditions
-- [ ] All entity references validated with explicit `has_value()`
-      check for every entity used in the artifact — no exceptions;
-      discovery attempted before stopping on any failure
+- [ ] All entity references validated explicitly: use has_value() where usable state matters; use defined-entity checks where existence matters.
 - [ ] Defensive Jinja patterns applied and confirmed in output —
       see `snippets/jinja_patterns.md` for reference (safe defaults,
       type coercion, text normalization, structured input handling,
@@ -179,7 +178,7 @@ Before any logic-bearing artifact is considered ready for deployment:
 | "The entity name is obvious" | It is not. Validate every referenced entity explicitly — do not normalize apostrophes, nicknames, or spelling by assumption (`rob_s_bedroom` not `robs_bedroom`). |
 | "`unknown` means the entity is missing" | `unknown` is also a valid runtime state for entities that exist. Use `has_value()` for usable-state checks; use `states.domain.object_id is not none` when defined-entity confirmation is required. |
 | "Current state looks right" | Confirm safe defaults cover unavailability and startup paths too. |
-| "I'll validate after wiring it up" | DTT-first is the gate. Wiring comes after validation. |
+| "I'll validate after deployment" | DTT/entity validation is the gate for deployment approval. Draft YAML may exist before DTT only when explicitly marked not deployment-ready. |
 | "This is a simple fix" | Simple fixes touch logic. Logic requires DTT. |
 | "No Jinja, just a service call" | Confirm entity existence. Full cycle not required. |
 | "It returned false, I'll ask" | Attempt discovery first — area, label, or integration queries often surface the correct name without interruption. |
