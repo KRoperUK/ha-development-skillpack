@@ -17,7 +17,7 @@ before DTT when the artifact is not yet ready to run.
 | — | **Pre-deployment validation triage** — scan for risk triggers requiring specific validation before deployment approval | |
 | 1 | **Impact classification** — Class A–D; determines rigor for all steps below | ✅ Yes for A/B without risk assessment |
 | 2 | **KISS** — simplest viable solution; 2–3 options presented for non-trivial problems | |
-| 3 | **Syntax & structure** — GUI-friendly YAML, plural keys, alias/description in automations/scripts only, comments policy | |
+| 3 | **Syntax & structure** — GUI-friendly YAML, plural keys, alias/note/description placement, comments policy | |
 | 4 | **DTT validation** — all Jinja and entity references proven before **deployment approval** | ✅ Yes for deployment |
 | 5 | **Traces** — orchestration/timing verified via Automation Traces where needed | |
 | 6 | **Live test** — happy-path trigger exercised | |
@@ -73,7 +73,7 @@ Before deployment approval, scan for risk triggers that require specific validat
 
 3) **Syntax & Structure**
    - Use current release -1 YAML/Jinja standards; reject deprecated or "also works" syntax.
-   - Apply GUI-friendly YAML, alias/description/comment rules, trigger rules, and changelog rules per `spec/yaml_style.md`.
+   - GUI-friendly YAML, plural keys, alias/note/description placement, comments policy, trigger rules, and changelog rules per `spec/yaml_style.md`.
 
 4) **DTT Probes — Mandatory Before Deployment Approval**
    - Validate Jinja logic and entity references before deployment approval. See `/guides/dtt_first_validation.md`.
@@ -175,7 +175,7 @@ This summary does not replace the Skill Pack checklist, verdict, or grade.
 - [ ] KISS & scope confirmed; simpler alternative considered and ruled out; no complexity added beyond current requirements
 - [ ] GUI-friendly automation/script YAML; `alias:` confirmed at schema-supported levels within automations/scripts; `description:` confirmed for automations/scripts; schema-supported naming/documentation confirmed for YAML-defined entities; `id:` per automation trigger; `alias:` confirmed absent from template sensors, input helpers, arbitrary variable mappings, and other YAML-defined entities.
 - [ ] `max_exceeded: silent` evaluated for automations that fire frequently or have significant risk of exceeding `max`
-- [ ] **Comments policy**: automations/scripts confirmed comment-free — GUI strips comments silently; dependencies in `description:` if needed. Template sensors confirmed with `# CHANGELOG:` and commented `#debug_*` attributes. AppDaemon comments for complex logic only.
+- [ ] **Comments policy**: automations/scripts confirmed comment-free — GUI strips comments silently; artifact-level context in `description:`; concise trace identity in nested `alias:`; non-obvious step-level rationale in nested `note:` where schema-supported. Template sensors confirmed with `# CHANGELOG:` and commented `#debug_*` attributes. AppDaemon comments for complex logic only.
 - [ ] **Startup triggers** confirmed only where post-restart actions needed (state recovery, initialization); not present for passive automations
 - [ ] Brains vs muscles confirmed; scripts for fan‑outs; concurrency verified sane
 - [ ] **Construct selection confirmed:** choose used only for provably mutually exclusive branches (discriminated by trigger ID, entity state, or other HA-native discriminator); if/then/else used for prioritized execution where conditions may overlap; no elif in YAML
@@ -199,7 +199,7 @@ This summary does not replace the Skill Pack checklist, verdict, or grade.
 - [ ] Best-in-class review completed: intent clarity, implementation alignment, condition placement, network efficiency confirmed
 - [ ] Wait strategies confirmed: `wait_template` used where applicable; exclusion lists guard empty string; `continue_on_timeout: true` present
 - [ ] Backward-incompatible changes (12 months) reviewed and confirmed
-- [ ] Exceptions documented inline using the artifact's supported documentation channel (`description:`/`alias:` for automations/scripts; comments for YAML-defined entities); no explicit entity IDs or helper names introduced in descriptions or changelogs
+- [ ] Exceptions documented inline using the artifact's supported documentation channel (`description:`/`alias:`/`note:` for automations/scripts where schema-supported; comments for YAML-defined entities)
 - [ ] Risks/alternatives/rollback documented; letter grade assigned; verdict chosen
 - [ ] Household UX / Annoyance Risk Review (HAF) completed (see sub-checklist)
 

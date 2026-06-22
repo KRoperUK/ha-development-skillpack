@@ -16,7 +16,6 @@ description: >
   - 20260102-1200: Canonicalized.
 
 mode: single
-max_exceeded: silent
 
 triggers:
   - alias: Post-restart reconciliation gate (45–75s random)
@@ -50,6 +49,10 @@ actions:
         conditions:
           - condition: trigger
             id: ha_restart_noncritical
+            alias: Triggered by startup delay completion
+            note: >-
+              Startup reconciliation is delayed until the global startup timer
+              is idle so restored entities and helpers have time to stabilize.
         sequence:
           - alias: Reconcile directive
             action: homeassistant.update_entity

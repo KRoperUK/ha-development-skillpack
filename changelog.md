@@ -1,4 +1,6 @@
 ## Changelog
+## 1.0.1 - 20260622
+- 20260622-1600: Added automation/script nested `note:` guidance for schema-supported triggers, conditions, and actions; clarified `alias:` as trace identity and `note:` as maintenance rationale.
 ## 1.0.0 - 20260607
 - Scaffold and sample corrections: fixed invalid YAML `elif` throughout; split mixed template+automation files into companion pairs; corrected `variables:` placement, canonical startup trigger doctrine, and restart recovery mode across all artifacts; removed GUI-fragile inline comments.
 - `snippets/jinja_patterns.md`: fixed unsafe `from_json | default()` pipe pattern; use `from_json(default=...)`.

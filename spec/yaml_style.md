@@ -21,9 +21,53 @@ This file merges formatting, trigger, and header standards into a single authori
 - `alias:` is valid in automations and scripts at the top level and on schema-supported nested elements such as triggers, conditions, action steps, repeat/choose branches, and variable action steps. It is also valid at the top level of scenes. It is **not** valid inside arbitrary variable mappings, template sensors, input helpers, or other YAML-defined entities — do not extrapolate it there.
 - Add `id:` per trigger in automations only. Multiple triggers may share an `id` only when they intentionally collapse to the same evaluation path. `id:` is not valid on template sensor triggers or other YAML-defined entity triggers.
 - `description:` required at automation/script level; schema-supported naming used for YAML-defined entities.
-- **No comments in automations or scripts** — the GUI strips them silently. Use `description:` instead. Dependency notes go in `description:` if needed.
+- **No YAML comments in automations or scripts** — the GUI strips them silently.
+  - Use `description:` for artifact-level purpose, dependencies, changelog, and broad operational context.
+  - Use nested `alias:` for short trace/editor identity only.
+  - Use nested `note:` for schema-supported trigger, condition, and action maintenance rationale when the reason is non-obvious.
+  - Do not put long explanations in `alias:`.
+  - Do not use `note:` to restate obvious YAML behavior.
+  - `note:` is valid only where the installed Home Assistant schema supports it; do not extrapolate it to template sensors, helpers, or arbitrary mappings.
 - YAML-defined entities that do not support Markdown-rendered `description:` use `# CHANGELOG:` comments near the top of the definition.
 
+---
+
+### Alias vs Note
+
+Use `alias:` to identify the step in traces and the automation editor.
+
+Use `note:` to explain why the step exists, especially for:
+- restart/restore guards
+- race-condition defenses
+- cooldown/dedupe logic
+- fail-open/fail-closed choices
+- override behavior
+- intentionally suppressed behavior
+- non-obvious dependency ordering
+
+For simple mechanical steps, omit `note:`.
+
+Good:
+```yaml
+- condition: template
+  alias: NWS gate — reject bad prior state; cooldown resend requires startup stable
+  value_template: |-
+    {{ ... }}
+  note: >-
+    Null/unknown prior state is rejected because startup restore echoes cannot
+    be safely distinguished from genuine new alerts. Cooldown resend requires
+    startup stabilization to avoid helper restore-order races.
+```
+
+Bad:
+```yaml
+- condition: template
+  alias: >-
+    Long multi-sentence explanation of every failure mode and why the condition
+    exists...
+  value_template: |-
+    {{ ... }} 
+```
 ---
 
 ## Conditional Control Flow
@@ -56,7 +100,7 @@ This file merges formatting, trigger, and header standards into a single authori
 - Prefer state triggers on specific entities over generic event broadcasts (e.g., `zwave_js_value_notification`). Eliminates Z-Wave bus overhead and reduces latency.
 - Caveat: some devices may not persist state; verify the entity updates on your hardware before relying on state triggers.
 
-**Deviations**: trigger pattern deviations are allowed when justified inline in `description:` or `alias:`.
+**Deviations**: trigger pattern deviations are allowed when justified inline in the artifact’s supported documentation channel: `description:` for artifact-level rationale, `alias:` for concise trace identity, or `note:` for schema-supported step-level rationale.
 
 ---
 
@@ -133,4 +177,4 @@ Blueprints are packaging only — not an exemption from Skill Pack standards. De
 
 ## Exceptions
 
-Deviations from any standard in this file are allowed only when documented inline in the artifact's supported documentation channel (`description:`/`alias:` for automations/scripts; comments for YAML-defined entities). The no explicit entity IDs/helper names rule is not waived by documenting a deviation.
+Deviations from any standard in this file are allowed only when documented inline in the artifact's supported documentation channel (`description:`/`alias:`/`note:` for automations/scripts where schema-supported; comments for YAML-defined entities).

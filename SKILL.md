@@ -5,9 +5,9 @@ description: >
 ---
 # SKILL.md
 
-**Version:** 1.0.0
+**Version:** 1.0.1
 **Maintainers:** Rob
-**Date:** 20260607
+**Date:** 20260622
 
 ## Purpose
 
