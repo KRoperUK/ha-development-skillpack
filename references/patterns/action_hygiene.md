@@ -13,6 +13,17 @@ Governs service-call behavior: when to call, how to guard, how to batch, and how
 
 ---
 
+## Action Response Data
+
+Some actions return data rather than only performing side effects. Capture it with `response_variable` and read it from later steps.
+
+- **Capture pattern**: `action: weather.get_forecasts` (or `calendar.get_events`, `todo.get_items`, etc.) with `response_variable: result`, then consume `{{ result[...] }}` downstream.
+- **Some actions only return data** (they have no side effect) and *require* `response_variable` — omitting it is a config error, not a silent no-op.
+- **Errors surface as raised exceptions**, not return codes: a failed action stops the sequence unless you deliberately set `continue_on_error: true`. Don't expect an error to appear as a value in the response.
+- **Prefer response data over scraping** helper/attribute state for information that does not naturally live in an entity's state (forecasts, event lists, query results). It is fetched on demand and avoids polluting the recorder with transient data.
+
+---
+
 ## Chatter Control
 
 - Debounce per room/zone; coalesce related changes and act once.
