@@ -224,6 +224,6 @@ Apply defensively based on integration reliability tier:
 - [ ] Manual override bypasses degradation logic
 
 ## See Also
-- `/spec/safety.md` — Manual overrides always win
-- `/patterns/event_driven_templates.md` — Prefer event-driven to polling
-- `/cookbooks/dtt_techniques.md` — Testing with unavailable/stale entities
+- `references/spec/safety.md` — Manual overrides always win
+- `references/patterns/event_driven_templates.md` — Prefer event-driven to polling
+- `references/cookbooks/dtt_techniques.md` — Testing with unavailable/stale entities

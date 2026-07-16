@@ -2,7 +2,7 @@
 
 **TL;DR**: Some integrations fail at the integration level — not at the command level. A single config entry reload often recovers them. This guide covers how to detect a known failure signature, throttle reloads to avoid storms, and reload the config entry automatically. The pattern applies to any integration that exhibits recoverable failure modes — cloud APIs, local bridges, polling integrations, and misbehaving local drivers alike.
 
-**Principle**: This guide covers integration-level recovery — detecting that a config entry has become dysfunctional and recycling it. `/guides/cloud_api_actuation.md` covers command-level delivery guarantees for cloud-backed actuation. Keep the scope narrow: one failure signature, one reload, one cooldown gate. Do not conflate watchdog logic with actuation retry logic.
+**Principle**: This guide covers integration-level recovery — detecting that a config entry has become dysfunctional and recycling it. `references/guides/cloud_api_actuation.md` covers command-level delivery guarantees for cloud-backed actuation. Keep the scope narrow: one failure signature, one reload, one cooldown gate. Do not conflate watchdog logic with actuation retry logic.
 
 ---
 
@@ -239,7 +239,7 @@ Adapt the trigger block for Type 2 (sustained unavailability) or Type 3 (stalene
 
 ## See Also
 
-- `/guides/cloud_api_actuation.md` — Command-level delivery guarantees for cloud-backed actuation; complements this guide for integrations that need both watchdog and actuation reliability
-- `/patterns/integration_degradation.md` — Sensor-side degradation and staleness handling for integrations that go silent
-- `/patterns/restart_resilience.md` — Startup delay and stagger patterns
-- `/guides/system_impact_class.md` — Impact classification; higher-class systems may warrant shorter cooldowns or additional notification on reload
+- `references/guides/cloud_api_actuation.md` — Command-level delivery guarantees for cloud-backed actuation; complements this guide for integrations that need both watchdog and actuation reliability
+- `references/patterns/integration_degradation.md` — Sensor-side degradation and staleness handling for integrations that go silent
+- `references/patterns/restart_resilience.md` — Startup delay and stagger patterns
+- `references/guides/system_impact_class.md` — Impact classification; higher-class systems may warrant shorter cooldowns or additional notification on reload

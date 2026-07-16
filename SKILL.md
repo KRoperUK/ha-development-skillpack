@@ -1,13 +1,26 @@
 ---
-name: home-assistant-cocreation
+name: ha-development-skillpack
 description: >
-  A development-system skill for co-creating Home Assistant automations, scripts, template sensors, and AppDaemon apps. Establishes architecture, implementation patterns, validation discipline, and review rigor. The result is automation code that survives failures, scales with confidence, and remains coherent across versions and complexity.
+  Expert system for co-creating Home Assistant automations, scripts, template sensors,
+  and AppDaemon apps in YAML and Jinja. Supplies architecture principles (brains-vs-muscles,
+  the native-first decision ladder), safe-Jinja and numeric-safety patterns, entity-reference
+  and runtime rules, restart-resilience and integration-degradation patterns, a
+  Developer-Tools-first validation workflow, and an A-minimum review rubric. Use whenever
+  designing, writing, debugging, reviewing, or refactoring Home Assistant YAML/Jinja,
+  template sensors, scripts, blueprints, or AppDaemon apps, or when reasoning about HA
+  state and attributes, triggers/conditions/actions, entity availability, restart behavior,
+  or breaking-change and version compatibility.
+license: MIT
+compatibility: >
+  For LLM coding assistants co-developing Home Assistant YAML/Jinja and AppDaemon Python.
+  Consult current Home Assistant documentation for version-sensitive work; targets Core at
+  the latest release minus roughly one month.
+metadata:
+  version: "1.2.0"
+  maintainers: "Rob"
+  date: "20260716"
 ---
 # SKILL.md
-
-**Version:** 1.0.1
-**Maintainers:** Rob
-**Date:** 20260622
 
 ## Purpose
 
@@ -58,9 +71,9 @@ The Assistant infers mode from context. If mode is genuinely unclear and the amb
 
 When rules conflict, resolve in this order:
 
-1. **Security hard stop** — see `/spec/security.md`
+1. **Security hard stop** — see `references/spec/security.md`
 2. **Owner explicit decision**
-3. **Core Skill Pack rules** — see `/spec/`, `/patterns/`, and `/guides/architecture_principles.md`
+3. **Core Skill Pack rules** — see `references/spec/`, `references/patterns/`, and `references/guides/architecture_principles.md`
 4. **Task-mode guidance** — see router below
 5. **Samples/examples** — illustrative only; never override scaffolds, specs, patterns, or owner decisions
 
@@ -68,13 +81,13 @@ When rules conflict, resolve in this order:
 
 ## Samples & Examples
 
-Samples in `/samples/` are production-quality examples, not authority. They illustrate acceptable output quality but do not define required structure.
+Samples in `assets/samples/` are production-quality examples, not authority. They illustrate acceptable output quality but do not define required structure.
 
 **Samples are not scaffolds.** Do not use them as starting templates. Do not imitate sample structure unless:
 - The owner explicitly requests an example-derived artifact, or
 - The task is to review, repair, or extend that specific sample family.
 
-When samples are consulted, they inform the standard; they do not override skill rules or architecture principles. For canonical starting structure, use `/scaffolds/` only.
+When samples are consulted, they inform the standard; they do not override skill rules or architecture principles. For canonical starting structure, use `assets/scaffolds/` only.
 
 ---
 
@@ -82,14 +95,15 @@ When samples are consulted, they inform the standard; they do not override skill
 
 | Task | Primary references |
 |---|---|
-| New idea / feasibility | `/guides/exploratory_mode.md` |
-| New work intake | `/guides/new_automation_intake.md`, `/guides/architecture_principles.md`, `/guides/system_impact_class.md` |
-| Implementation / YAML generation | `/spec/yaml_style.md`, `/snippets/jinja_patterns.md`, `/spec/entity_references.md`, `/spec/gui_editor_quirks.md`, `/spec/runtime.md`, `/patterns/`, `/scaffolds/` |
-| Debugging / unexpected behavior | `/guides/systematic_debugging.md`, `/guides/dtt_first_validation.md`, `/snippets/jinja_patterns.md` |
-| Jinja / template validation | `/guides/dtt_first_validation.md`, `/cookbooks/dtt_techniques.md`, `/snippets/jinja_patterns.md` |
-| Review | `/guides/review_and_checklist.md`, `/spec/safety.md`, `/spec/performance.md`, `/spec/notifications.md` |
-| Cloud / API / integration recovery | `/guides/cloud_api_actuation.md`, `/guides/integration_watchdog.md`, `/patterns/integration_degradation.md`, `/patterns/execution_gating.md`, `/patterns/restart_resilience.md`, `/spec/runtime.md`, `/spec/zwave_js.md` |
-| Refactor / surgical edit | `/guides/review_and_checklist.md`, `/guides/systematic_debugging.md`, relevant `/patterns/` |
+| New idea / feasibility | `references/guides/exploratory_mode.md` |
+| New work intake | `references/guides/new_automation_intake.md`, `references/guides/architecture_principles.md`, `references/guides/system_impact_class.md` |
+| Implementation / YAML generation | `references/spec/yaml_style.md`, `references/snippets/jinja_patterns.md`, `references/spec/entity_references.md`, `references/spec/gui_editor_quirks.md`, `references/spec/runtime.md`, `references/patterns/`, `assets/scaffolds/` |
+| AppDaemon app authoring | `references/guides/appdaemon_apps.md`, `references/guides/architecture_principles.md`, `references/spec/entity_references.md`, `references/patterns/restart_resilience.md`, `references/spec/runtime.md` |
+| Debugging / unexpected behavior | `references/guides/systematic_debugging.md`, `references/guides/dtt_first_validation.md`, `references/snippets/jinja_patterns.md` |
+| Jinja / template validation | `references/guides/dtt_first_validation.md`, `references/cookbooks/dtt_techniques.md`, `references/snippets/jinja_patterns.md` |
+| Review | `references/guides/review_and_checklist.md`, `references/spec/safety.md`, `references/spec/performance.md`, `references/spec/notifications.md` |
+| Cloud / API / integration recovery | `references/guides/cloud_api_actuation.md`, `references/guides/integration_watchdog.md`, `references/patterns/integration_degradation.md`, `references/patterns/execution_gating.md`, `references/patterns/restart_resilience.md`, `references/spec/runtime.md`, `references/spec/zwave_js.md` |
+| Refactor / surgical edit | `references/guides/review_and_checklist.md`, `references/guides/systematic_debugging.md`, relevant `references/patterns/` |
 
 ---
 
@@ -99,10 +113,11 @@ Canonical starting point per artifact type. Use these scaffolds as structural au
 
 | Artifact | Canonical scaffold | Key spec files |
 |---|---|---|
-| Automation | `/scaffolds/automation.yaml` | `/spec/yaml_style.md`, `/patterns/`, `/spec/runtime.md` |
-| Script | `/scaffolds/script.yaml` | `/spec/yaml_style.md`, `/patterns/action_hygiene.md` |
-| Template sensor | `/scaffolds/template_sensor.yaml` | `/snippets/jinja_patterns.md`, `/spec/runtime.md` |
-| Options comparison | `/scaffolds/options_matrix.md` | `/guides/architecture_principles.md` |
+| Automation | `assets/scaffolds/automation.yaml` | `references/spec/yaml_style.md`, `references/patterns/`, `references/spec/runtime.md` |
+| Script | `assets/scaffolds/script.yaml` | `references/spec/yaml_style.md`, `references/patterns/action_hygiene.md` |
+| Template sensor | `assets/scaffolds/template_sensor.yaml` | `references/snippets/jinja_patterns.md`, `references/spec/runtime.md` |
+| Options comparison | `assets/scaffolds/options_matrix.md` | `references/guides/architecture_principles.md` |
+| AppDaemon app | *(no scaffold — Python)* | `references/guides/appdaemon_apps.md`, `references/spec/runtime.md` |
 
 ---
 
@@ -110,21 +125,22 @@ Canonical starting point per artifact type. Use these scaffolds as structural au
 
 These apply regardless of task mode. Detail lives in the referenced files — do not re-derive from memory.
 
-- **Security**: `/spec/security.md` — hard stop on secrets and identifying material; narrow exception for operationally-required identifiers documented there.
-- **Impact classification**: classify worst-credible failure (Class A–D) before any design work — `/guides/system_impact_class.md`.
-- **Intake discipline**: no substantial new automation, script, or template sensor without first applying `/guides/new_automation_intake.md`; surgical patches and obvious one-line fixes may use the escape hatches defined there.
-- **Architecture**: brains vs muscles, decision ladder, overrides first, startup gating — `/guides/architecture_principles.md`.
-- **Action hygiene**: guard calls, chatter control, batching, lighting control paths — `/patterns/action_hygiene.md`.
-- **YAML and Jinja standards**: GUI-friendly YAML, alias/description scope, comments policy, safe Jinja, changelog format — `/spec/yaml_style.md`, `/snippets/jinja_patterns.md`.
-- **DTT-first**: Jinja logic and usable-state checks validated in Developer Tools before deployment; defined-entity checks used where existence matters — `/guides/dtt_first_validation.md`.
-- **Review standard**: production output requires A- minimum — `/guides/review_and_checklist.md`.
+- **Security**: `references/spec/security.md` — hard stop on secrets and identifying material; narrow exception for operationally-required identifiers documented there.
+- **Impact classification**: classify worst-credible failure (Class A–D) before any design work — `references/guides/system_impact_class.md`.
+- **Intake discipline**: no substantial new automation, script, or template sensor without first applying `references/guides/new_automation_intake.md`; surgical patches and obvious one-line fixes may use the escape hatches defined there.
+- **Architecture**: brains vs muscles, decision ladder, overrides first, startup gating — `references/guides/architecture_principles.md`.
+- **AppDaemon**: choosing AppDaemon does not relax HA invariants — string states, unavailable/unknown guards, `entity_id` addressing, non-blocking callbacks, restart resilience, overrides-first — `references/guides/appdaemon_apps.md`.
+- **Action hygiene**: guard calls, chatter control, batching, lighting control paths — `references/patterns/action_hygiene.md`.
+- **YAML and Jinja standards**: GUI-friendly YAML, alias/description scope, comments policy, safe Jinja, changelog format — `references/spec/yaml_style.md`, `references/snippets/jinja_patterns.md`.
+- **DTT-first**: Jinja logic and usable-state checks validated in Developer Tools before deployment; defined-entity checks used where existence matters — `references/guides/dtt_first_validation.md`.
+- **Review standard**: production output requires A- minimum — `references/guides/review_and_checklist.md`.
 - **Surgical edits**: favor minimum diff over rewrites unless refactoring is explicitly approved.
 - **Backward compatibility**: for production runtime artifacts, review relevant HA breaking changes from the last 12 months when touching version-sensitive syntax, integration behavior, template behavior, automation/script schema, or startup/runtime semantics. Confirm `BC review: done` or `BC review: N/A`.
-- **Household UX / HAF**: repeated annoyance is a production-level defect — `/guides/new_automation_intake.md`, `/guides/review_and_checklist.md`.
-- **Spec guardrails**: apply relevant `/spec/` files when applicable, especially `/spec/runtime.md`, `/spec/safety.md`, `/spec/performance.md`, `/spec/notifications.md`, `/spec/entity_references.md`, `/spec/gui_editor_quirks.md`, and `/spec/zwave_js.md`.
+- **Household UX / HAF**: repeated annoyance is a production-level defect — `references/guides/new_automation_intake.md`, `references/guides/review_and_checklist.md`.
+- **Spec guardrails**: apply relevant `references/spec/` files when applicable, especially `references/spec/runtime.md`, `references/spec/safety.md`, `references/spec/performance.md`, `references/spec/notifications.md`, `references/spec/entity_references.md`, `references/spec/gui_editor_quirks.md`, and `references/spec/zwave_js.md`.
 
 ---
 
 ## Compatibility
 
-Use current Home Assistant documentation when authoring new patterns, touching version-sensitive syntax, or reviewing compatibility-sensitive changes. See `/spec/runtime.md` for the versioning floor, BC review requirements, and upgrade policy.
+Use current Home Assistant documentation when authoring new patterns, touching version-sensitive syntax, or reviewing compatibility-sensitive changes. See `references/spec/runtime.md` for the versioning floor, BC review requirements, and upgrade policy.

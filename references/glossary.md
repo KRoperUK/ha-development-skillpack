@@ -1,6 +1,6 @@
 # Glossary & Naming Conventions
 
-This file defines vocabulary and naming conventions only. Workflow routing lives in `SKILL.md`; review authority lives in `/guides/review_and_checklist.md`.
+This file defines vocabulary and naming conventions only. Workflow routing lives in `SKILL.md`; review authority lives in `references/guides/review_and_checklist.md`.
 
 ## Acronyms & Terms
 
@@ -10,11 +10,11 @@ This file defines vocabulary and naming conventions only. Workflow routing lives
 - **Brains vs Muscles**: template sensors compute directives and intent (brains); automations and scripts react and actuate (muscles).
 - **Directive**: computed intent from a template sensor or app, usually paired with a human-readable `reason`; not direct actuation authority by itself.
 - **DTT**: Developer Tools → Template; the HA UI template editor used for Jinja validation.
-- **DTT-first**: validate Jinja logic and usable-state entity reads in Developer Tools before deployment approval; use defined-entity checks where existence matters — see `/guides/dtt_first_validation.md`.
+- **DTT-first**: validate Jinja logic and usable-state entity reads in Developer Tools before deployment approval; use defined-entity checks where existence matters — see `references/guides/dtt_first_validation.md`.
 - **Execution gating**: pattern where automations act only on positive evidence and default to no action on uncertainty.
 - **HA**: Home Assistant.
 - **HAF**: Household Acceptance Factor — household acceptance of automation behavior, nuisance risk, alerts, repeated toggles, sleep disruption, and automation fighting humans. Repeated annoyance is a production-level defect.
-- **SIC**: System Impact Classification — worst-credible failure impact rating (Class A–D) assigned before any design work begins; see `/guides/system_impact_class.md`.
+- **SIC**: System Impact Classification — worst-credible failure impact rating (Class A–D) assigned before any design work begins; see `references/guides/system_impact_class.md`.
 - **Staggering**: restart-delay strategy, usually on `timer.ha_startup_delay`, used to prevent thundering-herd behavior after HA restart.
 - **Steward safety**: preservation of owner intent, entity IDs, aliases, scope, and existing behavior during edits.
 

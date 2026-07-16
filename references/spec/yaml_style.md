@@ -70,6 +70,30 @@ Bad:
 ```
 ---
 
+## House Formatting & Quoting Standards
+
+Aligns with the official Home Assistant YAML style guide. These are correctness-and-consistency rules for any authored artifact; the GUI editor also emits YAML this way.
+
+**Formatting**
+- Indent with **2 spaces**; never tabs.
+- Use **block style** for sequences and mappings. Do not use flow/JSON style (`[a, b]`, `{k: v}`) for authored config.
+- Booleans are lowercase `true` / `false` only — never `True`, `yes`, `on` as a boolean.
+- Represent null as an **implicit null** (leave the value blank), not `~` or `null`.
+- **Omit default-valued options.** Do not spell out an option just to set it to its schema default; it adds noise and drifts on upstream default changes.
+
+**Quoting**
+- **Do not quote**: entity IDs, attribute names, device/area/floor IDs, `platform:` / `condition:` / trigger type / action (service) names, `device_class:` values, event names, and fixed schema enums (e.g. `mode: single`). These are safe unquoted and quoting them fights the GUI.
+- **Do quote**: free-text values a human reads (`message`, user-facing `name` text, `title`).
+- **Must quote to avoid coercion**: state values and inputs that YAML 1.1 would otherwise read as booleans — `'on'`, `'off'`, `'yes'`, `'no'` — must be single-quoted wherever they are a string value (e.g. `state: 'on'`, `to: 'off'`). This is why state comparisons in this pack quote `'on'`/`'off'` even though schema enums are left bare.
+- When a string must be quoted for another reason, prefer double quotes; use single quotes inside a Jinja-bearing double-quoted string (see the trigger and template guidance elsewhere in this file).
+
+**Shape rules**
+- **`target:` is the canonical way to address entities/devices/areas** in actions. Prefer `target:` over a top-level `entity_id:` or an `entity_id:` buried in `data:`.
+- **`action:` / `condition:` / `sequence:` are always a list of mappings** — use a block list (`- ...`) even when there is a single item. Never collapse them to a bare mapping.
+- **Scalar-or-list fields**: provide either a single scalar or a block list. Never join with commas in one string, never use a flow list, and never wrap a lone value in a one-item list.
+
+---
+
 ## Conditional Control Flow
 
 - Use `choose` only for **provably mutually exclusive branches** — exclusivity must be discriminated by trigger ID, entity state, or other HA-native discriminator, not assumed.
@@ -84,7 +108,7 @@ Bad:
 1. Event/state-driven (state, event, template) — first choice. This includes state triggers watching timer entities (e.g., `timer.ha_startup_delay → idle`) — these are event-driven, not time-based.
 2. Time-based polling (`time_pattern`, `interval`) — only when necessary; minimum 60s cadence unless critical.
 
-**Exception**: a time trigger scheduled from an `input_datetime` entity is the correct and preferred trigger for deferred-intent deadline patterns. This is not polling — it fires once at the scheduled time and is the intended mechanism for restart-resilient scheduling. See `/patterns/datetime_deadline.md`.
+**Exception**: a time trigger scheduled from an `input_datetime` entity is the correct and preferred trigger for deferred-intent deadline patterns. This is not polling — it fires once at the scheduled time and is the intended mechanism for restart-resilient scheduling. See `references/patterns/datetime_deadline.md`.
 
 **Debounce & windows**:
 - Use `for:` windows on triggers rather than delays in actions.

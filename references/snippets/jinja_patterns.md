@@ -68,6 +68,13 @@ below).
 {% if states('sensor.foo') != 'unknown' %}
 ```
 
+**`unavailable` vs `unknown` (semantics):**\
+These are distinct HA states and mean different things:
+- `unavailable` — HA cannot reach/read/control the source (device offline, integration down).
+- `unknown` — the source is reachable but a value is temporarily missing.
+
+`has_value()` correctly treats **both** (and `None`) as "no usable value," which is why it is preferred over hand-rolled `!= 'unknown'` checks that miss `unavailable`, `None`, and blank strings. Only branch on the specific literal when the automation must react *differently* to a device being offline versus a value being momentarily absent.
+
 ------------------------------------------------------------------------
 
 ## Text Normalization

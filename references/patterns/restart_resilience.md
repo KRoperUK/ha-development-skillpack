@@ -10,7 +10,7 @@
 
 - Use **trigger-level `for:`** on `timer.ha_startup_delay → idle` to stagger; **do not** use action delays.
 - Reconcile directives once; avoid actuation storms.
-- Use `input_datetime` for persisted deferred intent (deadline-style); use `timer` only for countdown semantics (see: `/patterns/datetime_deadline.md`).
+- Use `input_datetime` for persisted deferred intent (deadline-style); use `timer` only for countdown semantics (see: `references/patterns/datetime_deadline.md`).
 - Idempotency after restart: guard re-sends.
 
 ---
@@ -27,7 +27,7 @@ For systems using deferred intent:
 
 This ensures that work missed during downtime is handled deterministically.
 
-See: `/patterns/datetime_deadline.md` for canonical deadline semantics and implementation.
+See: `references/patterns/datetime_deadline.md` for canonical deadline semantics and implementation.
 
 ---
 

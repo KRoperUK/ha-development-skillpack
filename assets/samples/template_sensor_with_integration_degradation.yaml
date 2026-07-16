@@ -31,7 +31,7 @@
 # External API may be unavailable due to auth expiration, rate limits, or maintenance.
 # Sensor degrades gracefully to last-known/safe values instead of going unavailable.
 #
-# APPLIES: /patterns/integration_degradation.md
+# APPLIES: references/patterns/integration_degradation.md
 #
 # CHANGELOG:
 # - 20260607-1200: Split from combined file; automation moved to integration_degradation_automation.yaml.

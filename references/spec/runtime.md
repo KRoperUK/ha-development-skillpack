@@ -1,6 +1,8 @@
 # Runtime & Versioning Policy
 
-- **HA Core floor**: target the latest release **minus ~1 month** (e.g., if latest is 2026.2, support ≥2026.1). Avoid features newer than the floor without explicitly confirming the running HA version.
+- **HA Core floor**: target the latest release **minus ~1 month** (e.g., if latest is 2026.7, support ≥2026.6). Avoid features newer than the floor without explicitly confirming the running HA version.
+
+- **Version scheme**: HA Core uses CalVer `YYYY.MM.PATCH` where the month is **not zero-padded** (`2026.6.0`, not `2026.06.0`) and `PATCH` starts at 0. When code must gate on the running Core version, compare with an `AwesomeVersion`-style semantic comparison — never string/lexical comparison, which mis-orders values like `2026.10` vs `2026.9`.
 
 - **Python**: use the version bundled with HA Core; avoid pinning external interpreters.
 

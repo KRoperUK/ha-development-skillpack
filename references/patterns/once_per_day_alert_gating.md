@@ -266,6 +266,6 @@ Representative outcomes:
 
 ## Related Patterns
 
-- `/patterns/datetime_deadline.md`
-- `/patterns/restart_resilience.md`
-- `/snippets/jinja_patterns.md`
+- `references/patterns/datetime_deadline.md`
+- `references/patterns/restart_resilience.md`
+- `references/snippets/jinja_patterns.md`

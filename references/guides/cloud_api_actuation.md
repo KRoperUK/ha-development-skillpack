@@ -172,7 +172,7 @@ Missing any one of these leaves a gap in coverage:
 | `entity_recovered` | Entity returns from `unavailable` / `unknown` | Expected state lost during cloud outage |
 | `entity_unavailable` | Template trigger with `for: minutes: 5` | Sustained outage notification |
 
-`ha_restart` uses the canonical `timer.ha_startup_delay` idle pattern with `range(45, 76) | random` stagger. See `/patterns/restart_resilience.md`.
+`ha_restart` uses the canonical `timer.ha_startup_delay` idle pattern with `range(45, 76) | random` stagger. See `references/patterns/restart_resilience.md`.
 
 ---
 
@@ -207,8 +207,8 @@ Missing any one of these leaves a gap in coverage:
 
 ## See Also
 
-- `/guides/integration_watchdog.md` — Integration-level recovery via config entry reload; complements this guide when the integration itself needs recycling, not just the command retried
-- `/patterns/integration_degradation.md` — Sensor-side degradation, staleness, and source tiering for cloud-backed template sensors
-- `/patterns/restart_resilience.md` — Startup delay and stagger patterns
-- `/spec/notifications.md` — Notification ID conventions and auto-dismiss discipline
-- `/guides/system_impact_class.md` — Impact classification; Class A/B systems warrant stricter confirmation thresholds
+- `references/guides/integration_watchdog.md` — Integration-level recovery via config entry reload; complements this guide when the integration itself needs recycling, not just the command retried
+- `references/patterns/integration_degradation.md` — Sensor-side degradation, staleness, and source tiering for cloud-backed template sensors
+- `references/patterns/restart_resilience.md` — Startup delay and stagger patterns
+- `references/spec/notifications.md` — Notification ID conventions and auto-dismiss discipline
+- `references/guides/system_impact_class.md` — Impact classification; Class A/B systems warrant stricter confirmation thresholds

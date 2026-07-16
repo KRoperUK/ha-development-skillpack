@@ -1,8 +1,8 @@
 # Review & Checklist — How‑To + Rubric (Single Source of Truth)
 
-For new or novel work, complete `/guides/new_automation_intake.md`
+For new or novel work, complete `references/guides/new_automation_intake.md`
 before opening a review. For bug fixes, use
-`/guides/systematic_debugging.md`. Review begins after the relevant
+`references/guides/systematic_debugging.md`. Review begins after the relevant
 intake or debugging step is complete. DTT validation is mandatory
 before deployment approval, but design or patch reviews may occur
 before DTT when the artifact is not yet ready to run.
@@ -38,7 +38,7 @@ before DTT when the artifact is not yet ready to run.
 Use section **A)** for the full flow, **A1)** for hard stops, **C)** for copy-paste checklists.
 
 ## Blocking Gate — Secret & Identifying Material
-- Compliant with `spec/security.md` (no secret or identifying material present).
+- Compliant with `references/spec/security.md` (no secret or identifying material present).
 
 If detected:
 - Mark as ❌
@@ -61,23 +61,23 @@ Before deployment approval, scan for risk triggers that require specific validat
 ## A) Review Flow (Detailed)
 
 0) **Security**
-   - Hard stop if secrets or identifying material are present. See `spec/security.md`.
+   - Hard stop if secrets or identifying material are present. See `references/spec/security.md`.
 
 1) **System Impact Classification**
-   - Classify by worst-credible failure impact using `/guides/system_impact_class.md`.
+   - Classify by worst-credible failure impact using `references/guides/system_impact_class.md`.
    - Record class, worst-credible failure mode, and any Context Elevation reasoning. Class A/B without completed risk assessment is a hard stop.
 
 2) **KISS Gate**
    - Choose the simplest robust path. For non-trivial problems, compare 2–3 viable options.
-   - Reject speculative complexity not required by the stated intent. See `/guides/architecture_principles.md`.
+   - Reject speculative complexity not required by the stated intent. See `references/guides/architecture_principles.md`.
 
 3) **Syntax & Structure**
    - Use current release -1 YAML/Jinja standards; reject deprecated or "also works" syntax.
    - GUI-friendly YAML, plural keys, alias/note/description placement, comments policy, trigger rules, and changelog rules per `spec/yaml_style.md`.
 
 4) **DTT Probes — Mandatory Before Deployment Approval**
-   - Validate Jinja logic and entity references before deployment approval. See `/guides/dtt_first_validation.md`.
-   - If DTT passes but deployed behavior fails, switch to `/guides/systematic_debugging.md`.
+   - Validate Jinja logic and entity references before deployment approval. See `references/guides/dtt_first_validation.md`.
+   - If DTT passes but deployed behavior fails, switch to `references/guides/systematic_debugging.md`.
 
 5) **Traces vs DTT**
    - DTT proves template logic; Automation Traces verify orchestration/timing only when needed.
@@ -97,13 +97,13 @@ Before deployment approval, scan for risk triggers that require specific validat
    - Guard exclusion lists for empty string `''` (e.g., `not in ['dead','unknown','unavailable','']`).
 
 9) **Restart & Recovery**
-   - Apply `/patterns/restart_resilience.md`. Restart staggering uses trigger-level `for:` only — no action delays.
+   - Apply `references/patterns/restart_resilience.md`. Restart staggering uses trigger-level `for:` only — no action delays.
 
 10) **Idempotency & Chatter**
     - Guard device calls; batch by group/area; rate-limit noisy inputs; minimal bounded retry.
 
 11) **Overrides & Safety**
-    - Manual/guest/safety modes always win. See `/spec/safety.md`.
+    - Manual/guest/safety modes always win. See `references/spec/safety.md`.
 
 12) **Backward-Incompatible Changes**
     - Review last 12 months of HA breaking changes when applicable. Response must confirm `BC review: done` or `BC review: N/A`.
@@ -174,6 +174,7 @@ This summary does not replace the Skill Pack checklist, verdict, or grade.
 ### Master
 - [ ] KISS & scope confirmed; simpler alternative considered and ruled out; no complexity added beyond current requirements
 - [ ] GUI-friendly automation/script YAML; `alias:` confirmed at schema-supported levels within automations/scripts; `description:` confirmed for automations/scripts; schema-supported naming/documentation confirmed for YAML-defined entities; `id:` per automation trigger; `alias:` confirmed absent from template sensors, input helpers, arbitrary variable mappings, and other YAML-defined entities.
+- [ ] **House formatting & quoting confirmed** per `spec/yaml_style.md`: 2-space indent, lowercase `true`/`false`, block style, implicit nulls, defaults omitted; IDs/types/schema-enums unquoted, free text quoted, `'on'`/`'off'` state values quoted; `target:` used to address entities/devices/areas; `action:`/`condition:`/`sequence:` authored as a list of mappings
 - [ ] `max_exceeded: silent` evaluated for automations that fire frequently or have significant risk of exceeding `max`
 - [ ] **Comments policy**: automations/scripts confirmed comment-free — GUI strips comments silently; artifact-level context in `description:`; concise trace identity in nested `alias:`; non-obvious step-level rationale in nested `note:` where schema-supported. Template sensors confirmed with `# CHANGELOG:` and commented `#debug_*` attributes. AppDaemon comments for complex logic only.
 - [ ] **Startup triggers** confirmed only where post-restart actions needed (state recovery, initialization); not present for passive automations
@@ -195,7 +196,7 @@ This summary does not replace the Skill Pack checklist, verdict, or grade.
 - [ ] Fast-fail condition ordering confirmed: cheap checks first; likely failures early; expensive Jinja last
 - [ ] Chatter confirmed minimized; idempotent guards present; groups/areas used; rate‑limit applied as needed
 - [ ] Observability confirmed: `reason` attr present where external or ambiguous inputs exist; production logs only for significant events
-- [ ] DTT validation completed per `/guides/dtt_first_validation.md`; entity pre-flight confirmed; traces referenced if orchestration validated
+- [ ] DTT validation completed per `references/guides/dtt_first_validation.md`; entity pre-flight confirmed; traces referenced if orchestration validated
 - [ ] Best-in-class review completed: intent clarity, implementation alignment, condition placement, network efficiency confirmed
 - [ ] Wait strategies confirmed: `wait_template` used where applicable; exclusion lists guard empty string; `continue_on_timeout: true` present
 - [ ] Backward-incompatible changes (12 months) reviewed and confirmed

@@ -12,7 +12,7 @@
 - **Startup gating**: Gate non-trivial restart-sensitive work on `timer.ha_startup_delay → idle`; use trigger-level `for:` for startup staggering.
 
 ## 0) System Impact Classification
-See: `/guides/system_impact_class.md`
+See: `references/guides/system_impact_class.md`
 
 - Before any architectural decisions are made, classify the system by **worst-credible impact if it fails** (Class A–D).
 - Classification determines required rigor, defensive programming posture, and acceptable tradeoffs for all subsequent design decisions.
@@ -37,10 +37,10 @@ Apply in order. Stop at the first tier that solves the problem. Do not skip tier
 
 - **Tier 3 — Template sensor**: Only if tiers 1 and 2 cannot solve it. Computes directives, intent, and `reason`; treated as non-authoritative output.
 
-Tier 4 — AppDaemon: Preferred when YAML is insufficient — long-lived state, multi-step workflows, complex orchestration, or external system coordination. Consider AppDaemon also when YAML solutions become difficult to reason about, test, or maintain — not only when they are impossible. Skill Pack constraints still apply for all HA behavior (state handling, restart resilience, overrides); Superpowers-style decomposition and testing may be used for implementation discipline.
+Tier 4 — AppDaemon: Preferred when YAML is insufficient — long-lived state, multi-step workflows, complex orchestration, or external system coordination. Consider AppDaemon also when YAML solutions become difficult to reason about, test, or maintain — not only when they are impossible. Skill Pack constraints still apply for all HA behavior (state handling, restart resilience, overrides); Superpowers-style decomposition and testing may be used for implementation discipline. See `references/guides/appdaemon_apps.md` for AppDaemon-specific authoring rules (non-blocking callbacks, HA API usage, the unavailable/unknown guard).
 
 ## 3) Execution Gating & Control Flow
-- **Execution gating**: automations gate on positive evidence — no action executes unless all required conditions are provably met; default to no action on uncertainty. See `/patterns/execution_gating.md`.
+- **Execution gating**: automations gate on positive evidence — no action executes unless all required conditions are provably met; default to no action on uncertainty. See `references/patterns/execution_gating.md`.
 - **Overrides first**: manual overrides, guest/house-sitter modes, and safety coordinators take priority over all other logic. Override checks must be the first condition evaluated — earliest `if` condition or first `choose` branch — so the escape hatch always works.
 - **Construct selection**: use `choose` only for provably mutually exclusive branches discriminated by trigger ID, entity state, or other HA-native discriminator. Use `if/then/else` for prioritized execution where conditions may overlap. `elif` is not valid in HA YAML.
 
@@ -54,7 +54,7 @@ Tier 4 — AppDaemon: Preferred when YAML is insufficient — long-lived state, 
   - Critical (safety/security): **<10s fixed**
   - Non-critical: **45–75s randomized**
 - No action-level delays for staggering; use the trigger's `for:` only.
-- Prefer persisted deferred-intent deadlines using `input_datetime` over long `for:` for restart-safe behavior (see: `/patterns/datetime_deadline.md`).
+- Prefer persisted deferred-intent deadlines using `input_datetime` over long `for:` for restart-safe behavior (see: `references/patterns/datetime_deadline.md`).
 - Use `timer` only when modeling countdown semantics (UX, cancelable grace windows, protective cooldowns).
 
 ## 6) Determinism & Cost
