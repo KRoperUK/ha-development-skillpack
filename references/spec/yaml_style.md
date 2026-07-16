@@ -94,6 +94,22 @@ Aligns with the official Home Assistant YAML style guide. These are correctness-
 
 ---
 
+## Naming Conventions
+
+Follows Home Assistant's trigger/condition naming conventions. Apply to automation/step `alias:` values and blueprint trigger/condition/input names so traces and editors read consistently.
+
+- **Lead with the subject (entity type)**, then what happened: `Light turned on`, not `Turned on light`.
+- **Punctual events → simple past**: `Button pressed`, `Light turned on`.
+- **Ongoing states → started/stopped/paused + participle**: `Media started playing`, `Vacuum stopped cleaning`.
+- **Measurements → "changed" / "crossed threshold"**: `Temperature changed`, `Power crossed threshold`.
+- **Binary sensors → "detected" / "cleared"**: `Motion detected`, `Moisture cleared`.
+- **Status changes → "became" / "no longer"**: `Device became unavailable`.
+- **Condition titles → "[Subject] is [state]"**; boolean keys use an `is_` prefix: `is_home`, `is_night`.
+
+These are conventions, not schema rules — but consistent naming makes traces, blueprints, and reviews far easier to scan.
+
+---
+
 ## Conditional Control Flow
 
 - Use `choose` only for **provably mutually exclusive branches** — exclusivity must be discriminated by trigger ID, entity state, or other HA-native discriminator, not assumed.
