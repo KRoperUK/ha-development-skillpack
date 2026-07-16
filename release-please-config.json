@@ -1,0 +1,12 @@
+{
+    "packages": {
+        ".": {
+            "release-type": "simple",
+            "changelog-path": "changelog.md",
+            "include-component-in-tag": false,
+            "extra-files": [
+                "SKILL.md"
+            ]
+        }
+    }
+}

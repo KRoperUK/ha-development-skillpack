@@ -16,7 +16,7 @@ compatibility: >
   Consult current Home Assistant documentation for version-sensitive work; targets Core at
   the latest release minus roughly one month.
 metadata:
-  version: "1.2.1"
+  version: "1.2.1" # x-release-please-version
   maintainers: "Rob"
   date: "20260716"
 ---
