@@ -1,5 +1,12 @@
 ## Changelog
 
+## [1.3.0](https://github.com/KRoperUK/ha-development-skillpack/compare/v1.2.1...v1.3.0) (2026-07-16)
+
+
+### Features
+
+* add HA automation naming conventions to YAML style guide ([73db54c](https://github.com/KRoperUK/ha-development-skillpack/commit/73db54cc89a4b2a7e61d88bd63bc0607443e84cc))
+
 ## 1.2.1 - 20260716
 - Added recorder/database-cost guidance to `references/spec/performance.md` (state and attribute changes are persisted; keep attributes on high-churn entities lean; attributes are for dynamic state, not static metadata; exclude noisy entities from the recorder).
 - Added action response-data guidance to `references/patterns/action_hygiene.md` (`response_variable` capture, response-only actions, errors raise rather than return codes, prefer response data over scraping state).
